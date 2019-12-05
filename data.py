@@ -1,5 +1,3 @@
-import gym
-import gym_sokoban
 import torch
 from torch_geometric.data import Data
 from torch_geometric.utils import remove_isolated_nodes
@@ -13,11 +11,11 @@ def pixels2graph(state_pixels, embedding, linker):
 
     Args:
         - state_pixels: (W, H, 3) np.uint8
-        - embedding: function taking a (W, H, 3) and returning (W, H, N) Tensor  
+        - embedding: function taking a (W, H, 3) and returning (W, H, N) Tensor
         N>= 4 and always include the embedding_minimal
         - linker: function taking a (W, H, 3) state and returning edges_index
     Return:
-        - torch_geometric Data instance 
+        - torch_geometric Data instance
     """
     # Pixel state
     state = torch.tensor(state_pixels, dtype=torch.uint8)
@@ -38,28 +36,32 @@ def pixels2graph(state_pixels, embedding, linker):
     pos = pos[nodes_mask]
 
     # Action mask
-    mask = get_player_neighbors(edges_index, x)
+    player_idx = get_player_idx(x)
+    mask = get_node_neighbors_mask(player_idx, edges_index, x)
 
     # Apply mask
-    graph = Data(x=x, pos=pos, edge_index=edges_index, mask=mask)
+    graph = Data(x=x, pos=pos, edge_index=edges_index, mask=mask, player_idx=player_idx)
 
     return graph
 
 
-def get_player_neighbors(edges_index, x):
-    """Binary mask corresponding to player's neighbors"""
-    player_node_idx = (x[:, 1] == 1).nonzero().item()
+def get_player_idx(x):
+    _player_idx = (x[:, 1] == 1).nonzero().item()
+    player_idx = torch.tensor(_player_idx).long()
+    return player_idx
 
-    # Select edges starting from player
-    neighbors_index = edges_index[:, edges_index[0] == player_node_idx][1]
+
+def get_node_neighbors_mask(idx, edges_index, x):
+    """Binary mask corresponding to nodes's neighbors (including itself)"""
+    neighbors_index = edges_index[:, edges_index[0] == idx][1]
     mask = torch.zeros(x.size(0), dtype=torch.int32)
     mask[neighbors_index] = 1
-    mask[player_node_idx] = 1
+    mask[idx] = 1
     return mask
 
 
 def embedding_minimal(state):
-    """Minimal embedding of a pixel RGB state 
+    """Minimal embedding of a pixel RGB state
     Return:
         (W, H, 4) tensor
     """
@@ -119,9 +121,11 @@ def linker_neighbors_remove_walls(state):
 
 
 if __name__ == "__main__":
+    import gym
+    import gym_sokoban
+
     render_mode = "tiny_rgb_array"  # One pixel for one state
     env = gym.make("Sokoban-small-v1")
     pixels_state = env.reset(render_mode=render_mode)
 
     G = pixels2graph(pixels_state, embedding_minimal, linker_neighbors)
-
