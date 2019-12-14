@@ -1,4 +1,7 @@
 import torch
+from collections import namedtuple
+
+Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
 
 class TinyWorldElements:
@@ -9,3 +12,4 @@ class TinyWorldElements:
     BOX = torch.tensor([142, 121, 56], dtype=torch.uint8)
     PLAYER = torch.tensor([160, 212, 56], dtype=torch.uint8)
     PLAYER_ON_TARGET = torch.tensor([219, 212, 56], dtype=torch.uint8)
+
