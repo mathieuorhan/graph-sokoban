@@ -6,7 +6,7 @@ from torch_geometric.utils import remove_isolated_nodes
 from data.constants import TinyWorldElements as elem
 
 
-class MinimalEmbedding:
+class Embedding:
     NUM_NODES_FEATURES = 4
     RENDER_MODE = "tiny_rgb_array"
 
@@ -56,7 +56,7 @@ class MinimalEmbedding:
 
     @classmethod
     def linker(cls, state):
-        return cls.linker_neighbors(state)
+        raise NotImplementedError()
 
     @classmethod
     def linker_neighbors(cls, state):
@@ -123,7 +123,18 @@ class MinimalEmbedding:
         return mask
 
 
-class NoWallsEmbedding(MinimalEmbedding):
+class MinimalEmbedding(Embedding):
+    """Minimal embedding of a pixel RGB state
+        Return:
+            (W, H, 4) tensor
+        """
+
+    @classmethod
+    def linker(cls, state):
+        return cls.linker_neighbors(state)
+
+
+class NoWallsEmbedding(Embedding):
     """Similar to Minimal Embedding, but removes wall-wall links"""
 
     @classmethod
