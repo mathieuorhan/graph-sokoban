@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-from message_passing import GCNConv
+from model.message_passing import GCNConv
 
 
 class Net(torch.nn.Module):

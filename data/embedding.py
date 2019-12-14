@@ -3,7 +3,7 @@ import numpy as np
 from torch_geometric.data import Data
 from torch_geometric.utils import remove_isolated_nodes
 
-from constants import TinyWorldElements as elem
+from data.constants import TinyWorldElements as elem
 
 
 class MinimalEmbedding:
