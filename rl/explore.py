@@ -1,5 +1,6 @@
 import random
 import torch
+from data.constants import NODES_TO_ACTIONS
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,7 +22,7 @@ def epsilon_greedy(state, net, eps):
             action = best_from_nodes(scores, state)
             return action
     else:
-        return torch.tensor([[random.randrange(2)]], device=device, dtype=torch.long)
+        return torch.tensor([[random.randrange(8)]], device=device, dtype=torch.long)
 
 
 def best_from_nodes(scores, state):
@@ -32,4 +33,15 @@ def best_from_nodes(scores, state):
     Return:
         - int, action of node with best Q value
     """
-    raise NotImplementedError
+    # Select the position and the type of the node corresponding to the max of the scores
+    mask = state.mask
+    _, idx_best = torch.max(scores[mask], 0)
+    idx_best = mask.nonzero()[idx_best][0]
+    action_node_pos = state.pos[idx_best]
+    action_node_type = state.x[idx_best].nonzero().item()
+
+    # 9 possibilities corresponding to the 9 possible actions
+    diff_pos = action_node_pos - state.pos[state.player_idx]
+    dx, dy = diff_pos[0, 0].item(), diff_pos[0, 1].item()
+
+    return torch.tensor([[NODES_TO_ACTIONS[(dx, dy, action_node_type)]]])
