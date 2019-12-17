@@ -14,22 +14,17 @@ class TinyWorldElements:
     PLAYER_ON_TARGET = torch.tensor([219, 212, 56], dtype=torch.uint8)
 
 
-# Map the difference between the chosen action node and the action node type (dx, dy, action_node_type) 
+# Map the difference between the chosen action node and whether there is a box on it (dx, dy, action_node_box) 
 # to the action taken by the environment (int between 0 and 8)
 NODES_TO_ACTIONS = {
-    (0, 0, 1): 0,  # No operation
-    (0, 0, 2): 0,  # No operation
-    (1, 0, 0): 8,  # Move right
-    (1, 0, 2): 4,  # Push right
-    (1, 0, 3): 4,  # Push right
-    (-1, 0, 0): 7,  # Move left
-    (-1, 0, 2): 3,  # Push left
-    (-1, 0, 3): 3,  # Push left
-    (0, 1, 0): 6,  # Move down
-    (0, 1, 2): 2,  # Push down
-    (0, 1, 3): 2,  # Push down
-    (0, -1, 0): 5,  # Move up
-    (0, -1, 2): 1,  # Push up
-    (0, -1, 3): 1,  # Push up
+    (0, 0, False): 0,  # No operation
+    (1, 0, True): 8,  # Push right
+    (1, 0, False): 4,  # Move right
+    (-1, 0, True): 7,  # Push left
+    (-1, 0, False): 3,  # Move left
+    (0, 1, True): 6,  # Push down
+    (0, 1, False): 2,  # Move down
+    (0, -1, True): 5,  # Push up
+    (0, -1, False): 1,  # Move up
 }
 
