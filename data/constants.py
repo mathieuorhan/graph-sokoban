@@ -15,11 +15,17 @@ class TinyWorldElements:
 
 
 class SokobanElements:
-    EMPTY = " "
+    FLOOR = " "
     WALL = "#"
     PLAYER = "@"
     BOX = "$"
-    TARGET = "."
+    BOX_TARGET = "."
+
+
+ASCII_TO_PIXELS = dict([
+    (getattr(SokobanElements, name), getattr(TinyWorldElements, name))
+        for name in ["FLOOR", "WALL", "PLAYER", "BOX", "BOX_TARGET"]
+])
 
 
 # Map the difference between the chosen action node and whether there is a box on it (dx, dy, action_node_box)
@@ -35,4 +41,3 @@ NODES_TO_ACTIONS = {
     (0, -1, True): 1,  # Push up
     (0, -1, False): 5,  # Move up
 }
-

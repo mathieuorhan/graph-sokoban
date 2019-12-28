@@ -4,6 +4,24 @@ from torch_geometric.data import Data
 from torch_geometric.utils import remove_isolated_nodes
 
 from data.constants import TinyWorldElements as elem
+from data.constants import ASCII_TO_PIXELS
+
+
+def ascii_to_img(filepath):
+    """Convert a level saved in .txt format to an RGB image.
+    Args: 
+        - filepath : str, path to the saved .txt file
+    Returns:
+        - state_pixels : (W, H, 3) np.uint8  
+    """
+    with open(filepath, 'r') as f:
+        pixels = []
+        for line in f:
+            pix = torch.cat([ASCII_TO_PIXELS[s][None] for s in line if s != '\n'])[None]
+            pixels.append(pix)
+        pixels = torch.cat(pixels, 0)
+    
+    return pixels.numpy()
 
 
 class Embedding:
