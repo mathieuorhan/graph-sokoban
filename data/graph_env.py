@@ -2,14 +2,7 @@ import copy
 import torch
 from torch_geometric.data import Data
 
-
-def clone_and_detach_data(data):
-    return Data.from_dict(
-        {
-            k: v.clone().detach() if torch.is_tensor(v) else copy.deepcopy(v)
-            for k, v in data.__dict__.items()
-        }
-    )
+import data.utils as utils
 
 
 class GraphEnv:
@@ -50,18 +43,20 @@ class GraphEnv:
 
         reward = self.STEP_REWARD
 
-        if all(self.state.x[self.state.x[:, 2] == 1][:, 0]):
+        if utils.all_boxes_on_all_targets(self.state):
             done = True
         else:
             done = False
 
-        next_state = clone_and_detach_data(self.state)
+        next_state = utils.clone_and_detach_data(self.state)
 
         # If self, do nothing
         if next_state.player_idx == node_idx:
             pass
         else:
-            assert self.is_neighbor(node_idx), "node_idx is not reachable"
+            assert utils.is_neighbor_of_player(
+                next_state, node_idx
+            ), "node_idx is not reachable"
         # If void, move
         if not next_state.x[node_idx, 0] and not next_state.x[node_idx, 3]:
             next_state.x[next_state.player_idx, 1] = 0
@@ -96,7 +91,7 @@ class GraphEnv:
                 if next_state.x[node_idx, 2] == 1:
                     reward += self.OFF_BOX_REWARD
                 # Reward : if all boxes are on all targets
-                if all(next_state.x[next_state.x[:, 2] == 1][:, 0]):
+                if utils.all_boxes_on_all_targets(next_state):
                     reward += self.FINISH_REWARD
                 next_state.player_idx = node_idx.long().unsqueeze(0)
             # Else, do nothing
@@ -115,12 +110,6 @@ class GraphEnv:
         info = dict()
         self.state = next_state
         return next_state, reward, done, info
-
-    def is_neighbor(self, node_idx):
-        player_neighbors = self.state.edge_index[
-            :, self.state.edge_index[0] == self.state.player_idx
-        ][1]
-        return node_idx in player_neighbors
 
     def render(self):
         return self.state
