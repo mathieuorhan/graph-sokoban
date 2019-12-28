@@ -14,6 +14,14 @@ class TinyWorldElements:
     PLAYER_ON_TARGET = torch.tensor([219, 212, 56], dtype=torch.uint8)
 
 
+class SokobanElements:
+    EMPTY = " "
+    WALL = "#"
+    PLAYER = "@"
+    BOX = "$"
+    TARGET = "."
+
+
 # Map the difference between the chosen action node and whether there is a box on it (dx, dy, action_node_box)
 # to the action taken by the environment (int between 0 and 8)
 NODES_TO_ACTIONS = {
