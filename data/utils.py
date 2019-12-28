@@ -30,7 +30,7 @@ def are_off_target_boxes_in_corner(state):
     This is useful to stop the game early and/or penalize
     """
     # Gather boxes not on targets
-    boxes_idx = ((state.x[:, 0] == 1) & (state.x[:, 2] == 0)).nonzero().squeeze()
+    boxes_idx = ((state.x[:, 0] == 1) & (state.x[:, 2] == 0)).nonzero().view(-1)
     nb_boxes = boxes_idx.size(0)
 
     # Count number of walls in their neighbors
@@ -43,3 +43,8 @@ def are_off_target_boxes_in_corner(state):
     is_deadlock = nb_walls > nb_boxes
 
     return is_deadlock
+
+
+def count_boxes(state):
+    return (state.x[:, 0] == 1).sum().item()
+
