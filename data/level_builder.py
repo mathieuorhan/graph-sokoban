@@ -4,11 +4,11 @@ from constants import SokobanElements
 
 
 LEVEL_CHARS = {
-    0: SokobanElements.EMPTY,
+    0: SokobanElements.FLOOR,
     1: SokobanElements.WALL,
     2: SokobanElements.BOX,
     3: SokobanElements.PLAYER,
-    4: SokobanElements.TARGET
+    4: SokobanElements.BOX_TARGET
 }
 
 
@@ -16,12 +16,12 @@ class Cell():
     N_STATES = 5
     BORDER_COLOR = "black"
     WALL_COLOR = "black"
-    EMPTY_COLOR = "white"
+    FLOOR_COLOR = "white"
     BOX_COLOR = "orange"
     PLAYER_COLOR = "blue"
     TARGET_COLOR = "green"
     COLORS = {
-        0: EMPTY_COLOR,
+        0: FLOOR_COLOR,
         1: WALL_COLOR,
         2: BOX_COLOR,
         3: PLAYER_COLOR,
