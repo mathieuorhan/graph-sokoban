@@ -16,37 +16,51 @@ def optimize_model(memory, policy_net, target_net, optimizer, batch_size, gamma)
 
     # Compute a mask of non-final states and concatenate the batch elements
     # in a single graph using pytorch_geometric Batch class
-    non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                          batch.next_state)), device=device, dtype=torch.bool)
-    non_final_next_states = Batch.from_data_list([
-        s for s in batch.next_state if s is not None
-    ]).to(device)
-    
+    non_final_mask = torch.tensor(
+        tuple(map(lambda s: s is not None, batch.next_state)),
+        device=device,
+        dtype=torch.bool,
+    )
+
+    if any(non_final_mask):
+        non_final_next_states = Batch.from_data_list(
+            [s for s in batch.next_state if s is not None]
+        ).to(device)
+
     state_batch = Batch.from_data_list(batch.state)
-    state_batch = state_batch.to(device)
-    action_batch = torch.cat(batch.action)
-    reward_batch = torch.cat(batch.reward)
+    # state_batch = state_batch.to(device)
+    action_batch = torch.stack(batch.action)
+    reward_batch = torch.stack(batch.reward)
 
     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
     # columns of actions taken. These are the actions which would've been taken
     # for each batch state according to policy_net
-    
+
     state_action_values = torch.zeros(batch_size, device=device)
     state_action_values_batch = policy_net(state_batch.x, state_batch.edge_index)
 
     # TODO Try to remove for loop
     for i in range(batch_size):
-        state_action_values[i] = state_action_values_batch[state_batch.batch == i][action_batch[i]]
+        state_action_values[i] = state_action_values_batch[state_batch.batch == i][
+            action_batch[i]
+        ]
+
+    # TODO : max over all values ?!!!!
 
     # Compute V(s_{t+1}) for all next states.
     next_state_values = torch.zeros((batch_size, 1), device=device)
-    next_state_values[non_final_mask], _ = scatter_max(
-        target_net(non_final_next_states.x, non_final_next_states.edge_index), 
-        non_final_next_states.batch, 
-        dim=0
+    target_prediction = target_net(
+        non_final_next_states.x, non_final_next_states.edge_index
     )
+    neighbor_mask = non_final_next_states.mask.squeeze()
+    if any(non_final_mask):
+        next_state_values[non_final_mask], _ = scatter_max(
+            target_prediction[neighbor_mask],
+            non_final_next_states.batch[neighbor_mask],
+            dim=0,
+        )
     next_state_values = next_state_values.detach().squeeze()
-    
+
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * gamma) + reward_batch
 
