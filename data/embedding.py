@@ -114,9 +114,9 @@ class Embedding:
         return player_idx
 
     @classmethod
-    def get_node_neighbors_mask(cls, idx, edges_index, x):
+    def get_node_neighbors_mask(cls, idx, edge_index, x):
         """Binary mask corresponding to nodes's neighbors (including itself)"""
-        neighbors_index = edges_index[:, edges_index[0] == idx][1]
+        neighbors_index = edge_index[:, edge_index[0] == idx][1]
         mask = torch.zeros(x.size(0), dtype=torch.int32)
         mask[neighbors_index] = 1
         mask[idx] = 1
@@ -147,6 +147,52 @@ class NoWallsEmbedding(Embedding):
         )
         edges_index = edges_index[:, ~mask]
         return edges_index
+
+
+class NoWallsV2Embedding(NoWallsEmbedding):
+    """Similar to NoWalls Embedding, but with some changes:
+    
+    - More node features
+    - Mask does not consider walls and "no action"
+    """
+
+    NUM_NODES_FEATURES = 5
+
+    @classmethod
+    def embedding(cls, state):
+        """Embedding of a pixel RGB state
+        Return:
+            (W, H, 5) tensor
+        """
+
+        has_box = torch.all(state == elem.BOX, -1) | torch.all(
+            state == elem.BOX_ON_TARGET, -1
+        )
+        has_player = torch.all(state == elem.PLAYER, -1) | torch.all(
+            state == elem.PLAYER_ON_TARGET, -1
+        )
+        is_target = (
+            torch.all(state == elem.BOX_TARGET, -1)
+            | torch.all(state == elem.PLAYER_ON_TARGET, -1)
+            | torch.all(state == elem.BOX_ON_TARGET, -1)
+        )
+        is_wall = torch.all(state == elem.WALL, -1)
+        is_free = (~is_wall) & (~has_box) & (~has_player)
+        # wall_is_neighbor = None  # TODO
+
+        embedded = torch.stack(
+            [has_box, has_player, is_target, is_wall, is_free], dim=-1
+        )
+        return embedded
+
+    @classmethod
+    def get_node_neighbors_mask(cls, idx, edge_index, x):
+        """Binary mask corresponding to nodes's neighbors (excluding walls)"""
+        neighbors_index = edge_index[:, edge_index[0] == idx][1]
+        mask = torch.zeros(x.size(0), dtype=torch.int32)
+        mask[neighbors_index] = 1
+        mask[x[:, 3] == 1] = 0  # Remove walls
+        return mask
 
 
 if __name__ == "__main__":

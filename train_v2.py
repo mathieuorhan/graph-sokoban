@@ -11,11 +11,9 @@ from torch.utils.data import DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-import networkx as nx
-from torch_geometric.utils.convert import to_networkx
 
 from data.dataset import InMemorySokobanDataset
-from data.embedding import MinimalEmbedding, NoWallsEmbedding
+from data.embedding import MinimalEmbedding, NoWallsEmbedding, NoWallsV2Embedding
 from data.replay import ReplayMemory
 from data.graph_env import GraphEnv
 from model.network import Net
@@ -24,18 +22,18 @@ from rl.optimize import optimize_model
 
 # Parameters
 
-TRAIN_PATH = "levels/very_easy/train"
-TEST_PATH = "levels/very_easy/test"
+TRAIN_PATH = "levels/very_easy_100/train"
+TEST_PATH = "levels/very_easy_100/test"
 
 TARGET_UPDATE = 20
 GAMMA = 1.0
-EPS_0 = 1.0
-EPS_DECAY = 0.99
+EPS_0 = 0.1
+EPS_DECAY = 1
 BATCH_SIZE = 16
-BUFFER_SIZE = 128
+BUFFER_SIZE = 1000
 MAX_STEPS = 25
 MAX_STEPS_EVAL = 25
-NUM_EPOCHS = 1
+NUM_EPOCHS = 100
 SEED = 123
 WALLS_PROBS = 0
 STATIC_PROBS = 0
@@ -67,7 +65,7 @@ memory = ReplayMemory(BUFFER_SIZE)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Create embedding
-embedding = NoWallsEmbedding()
+embedding = NoWallsV2Embedding()
 
 # Create models
 # policy_net = Net(embedding.NUM_NODES_FEATURES).to(device)
