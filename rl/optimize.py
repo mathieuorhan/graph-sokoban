@@ -45,21 +45,20 @@ def optimize_model(memory, policy_net, target_net, optimizer, batch_size, gamma)
             action_batch[i]
         ]
 
-    # TODO : max over all values ?!!!!
-
     # Compute V(s_{t+1}) for all next states.
-    next_state_values = torch.zeros((batch_size, 1), device=device)
-    target_prediction = target_net(
-        non_final_next_states.x, non_final_next_states.edge_index
-    )
-    neighbor_mask = non_final_next_states.mask.squeeze()
-    if any(non_final_mask):
-        next_state_values[non_final_mask], _ = scatter_max(
-            target_prediction[neighbor_mask],
-            non_final_next_states.batch[neighbor_mask],
-            dim=0,
+    with torch.no_grad():
+        next_state_values = torch.zeros((batch_size, 1), device=device)
+        target_prediction = target_net(
+            non_final_next_states.x, non_final_next_states.edge_index
         )
-    next_state_values = next_state_values.detach().squeeze()
+        neighbor_mask = non_final_next_states.mask.squeeze()
+        if any(non_final_mask):
+            next_state_values[non_final_mask], _ = scatter_max(
+                target_prediction[neighbor_mask],
+                non_final_next_states.batch[neighbor_mask],
+                dim=0,
+            )
+        next_state_values = next_state_values.squeeze()
 
     # Compute the expected Q values
     expected_state_action_values = (next_state_values * gamma) + reward_batch
