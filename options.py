@@ -8,8 +8,8 @@ def parse_options():
         "--logs", type=str, help="output dir to save the logs", default="./logs/",
     )
     # Data paths
-    parser.add_argument("--train_path", type=str)
-    parser.add_argument("--test_path", type=str)
+    parser.add_argument("--train_path", type=str, default="levels/dummy_10")
+    parser.add_argument("--test_path", type=str, default="levels/dummy_10")
 
     parser.add_argument("--target_update", type=int, default=10)
     parser.add_argument("--gamma", type=float, default=1.0)
@@ -20,11 +20,11 @@ def parse_options():
     parser.add_argument("--buffer_size", type=int, default=5000)
 
     parser.add_argument("--max_steps", type=int, default=25)
-    parser.add_argument("--max_steps_test", type=int, default=25)
+    parser.add_argument("--max_steps_eval", type=int, default=25)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--seed", type=int, default=123)
-    parser.add_argument("--walls_probs", type=float, default=0)
-    parser.add_argument("--static_probs", type=float, default=0)
+    parser.add_argument("--walls_prob", type=float, default=0)
+    parser.add_argument("--static_prob", type=float, default=0)
 
     # Opt
     parser.add_argument("--lr", type=float, default=0.00025)
