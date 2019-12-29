@@ -1,4 +1,3 @@
-from itertools import count
 from tqdm import tqdm
 
 from torch_geometric.nn import GraphUNet
@@ -22,21 +21,27 @@ from rl.optimize import optimize_model
 
 # Parameters
 
-TRAIN_PATH = "levels/very_easy_100/train"
-TEST_PATH = "levels/very_easy_100/test"
+TRAIN_PATH = "levels/very_easy/train"
+TEST_PATH = "levels/very_easy/test"
 
-TARGET_UPDATE = 20
+TARGET_UPDATE = 10
 GAMMA = 1.0
 EPS_0 = 0.1
-EPS_DECAY = 1
+EPS_DECAY = 1.0
 BATCH_SIZE = 16
-BUFFER_SIZE = 1000
+BUFFER_SIZE = 5000
 MAX_STEPS = 25
 MAX_STEPS_EVAL = 25
-NUM_EPOCHS = 100
+NUM_EPOCHS = 200
 SEED = 123
 WALLS_PROBS = 0
 STATIC_PROBS = 0
+
+# Deadlocks
+EARLY_STOP_DEADLOCKS = False
+PENALIZE_DEADLOCKS = True
+REWARD_DEADLOCKS = -5
+GO_BACK_AFTER_DEADLOCKS = True
 
 # Opt parameters
 LEARNING_RATE = 0.00025
@@ -48,9 +53,10 @@ HIDDEN_CHANNELS = 64
 DEPTH = 3
 ACT = F.relu
 POOL_RATIOS = 0.5
-SUM_RES = True
+SUM_RES = False
 
-# "good results": hidden = 64, depth = 3, pool = 0.5
+# "good results": hidden = 64, depth = 3, pool = 0.5, sum_res = 1
+# sum_res = False seems better
 
 
 # Seed
@@ -114,6 +120,7 @@ for epoch in range(NUM_EPOCHS):
     policy_net.train()
     mean_total_reward = 0
     total_solved = 0
+    total_deadlocks = 0
     # Sample the episodes
     episode_indexes = list(range(len(dataset_train)))
     random.shuffle(episode_indexes)
@@ -129,15 +136,15 @@ for epoch in range(NUM_EPOCHS):
                 action_node = epsilon_greedy_only_graph(
                     state, policy_net, eps, random_generator, WALLS_PROBS, STATIC_PROBS
                 )
-                _, reward, done, _ = env.step(action_node)
+                next_state, reward, done, info = env.step(action_node)
+            if info["deadlock"] and PENALIZE_DEADLOCKS:
+                reward += REWARD_DEADLOCKS
             total_reward += reward
             reward = torch.tensor(reward, device=device)
 
             # Observe new state
             if done:
                 next_state = None
-            else:
-                next_state = env.render()
 
             # Store the transition in memory
             memory.push(state, action_node, next_state, reward)
@@ -156,15 +163,23 @@ for epoch in range(NUM_EPOCHS):
                 total_solved += 1
                 break
 
+            if info["deadlock"]:
+                total_deadlocks += 1
+                if EARLY_STOP_DEADLOCKS:
+                    break
+                if GO_BACK_AFTER_DEADLOCKS:
+                    # Go back directly to previous state
+                    env.state = state
+
         # Update the target network, copying all weights and biases in DQN
         episodes_seen += 1
         if episodes_seen % TARGET_UPDATE == 0:
             target_net.load_state_dict(policy_net.state_dict())
         mean_total_reward += total_reward / len(dataset_train)
-    mean_solved = total_solved / len(dataset_test)
+    mean_solved = total_solved / len(dataset_train)
     eps *= EPS_DECAY
     print(
-        f"[Train] Mean reward: {mean_total_reward:.2f}. Solved: {total_solved}/{len(dataset_test)} ({mean_solved:.2f}%)"
+        f"[Train] Mean reward: {mean_total_reward:.2f}. Solved: {total_solved}/{len(dataset_train)} ({100*mean_solved:.2f}%). Deadlocks: {total_deadlocks}/{len(dataset_train)}"
     )
 
     # Evaluation
@@ -194,7 +209,7 @@ for epoch in range(NUM_EPOCHS):
         mean_total_reward += total_reward / len(dataset_test)
     mean_solved = total_solved / len(dataset_test)
     print(
-        f"[Eval.] Mean reward: {mean_total_reward:.2f}. Solved: {total_solved}/{len(dataset_train)} ({mean_solved:.2f}%)"
+        f"[Eval.] Mean reward: {mean_total_reward:.2f}. Solved: {total_solved}/{len(dataset_test)} ({100*mean_solved:.2f}%)"
     )
 
 # Save model
