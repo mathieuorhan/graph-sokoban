@@ -13,7 +13,7 @@ opt.unet_sum_res = False
 opt.unet_act = F.relu
 trainer = QLearningTrainer(opt)
 
-for _ in range(opt.epoch):
+for _ in range(opt.epochs):
     trainer.train_one_epoch()
     trainer.eval_one_epoch()
 
