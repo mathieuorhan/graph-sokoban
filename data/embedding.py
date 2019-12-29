@@ -4,10 +4,12 @@ from torch_geometric.data import Data
 from torch_geometric.utils import remove_isolated_nodes
 
 from data.constants import TinyWorldElements as elem
+from data.constants import Directions
 
 
 class Embedding:
     NUM_NODES_FEATURES = 4
+    NUM_EDGES_FEATURES = 0
     RENDER_MODE = "tiny_rgb_array"
 
     @classmethod
@@ -47,12 +49,24 @@ class Embedding:
         mask = cls.get_node_neighbors_mask(player_idx, edges_index, x)
         mask = mask.unsqueeze(1).bool()  # (num_nodes, 1) bool
 
+        # Edge features, None or (num_edges_features)
+        edge_attr = cls.get_edge_attr(edges_index, x, pos)
+
         # Apply mask
         graph = Data(
-            x=x, pos=pos, edge_index=edges_index, mask=mask, player_idx=player_idx
+            x=x,
+            pos=pos,
+            edge_index=edges_index,
+            edge_attr=edge_attr,
+            mask=mask,
+            player_idx=player_idx,
         )
 
         return graph
+
+    @classmethod
+    def get_edge_attr(cls, edges_index, x, pos):
+        return None
 
     @classmethod
     def linker(cls, state):
@@ -161,6 +175,7 @@ class NoWallsV2Embedding(NoWallsEmbedding):
     @classmethod
     def embedding(cls, state):
         """Embedding of a pixel RGB state
+
         Return:
             (W, H, 5) tensor
         """
@@ -193,6 +208,28 @@ class NoWallsV2Embedding(NoWallsEmbedding):
         mask[neighbors_index] = 1
         mask[x[:, 3] == 1] = 0  # Remove walls
         return mask
+
+
+class DirectionalEmbedding(NoWallsV2Embedding):
+    """Like NoWallsV2, but with edge features encoding directions"""
+
+    NUM_EDGES_FEATURES = 4
+
+    @classmethod
+    def get_edge_attr(cls, edges_index, x, pos):
+        # (2, num_edges, 2)
+        edges_pos = pos[edges_index, :]
+        # (num_edges, 2)
+        delta = edges_pos[1, :, :] - edges_pos[0, :, :]
+
+        feat_up = torch.all(delta == Directions.UP, -1)
+        feat_down = torch.all(delta == Directions.DOWN, -1)
+        feat_left = torch.all(delta == Directions.LEFT, -1)
+        feat_right = torch.all(delta == Directions.RIGHT, -1)
+
+        # (num_edges, 4)
+        feats = torch.stack([feat_up, feat_down, feat_left, feat_right], dim=-1).float()
+        return feats
 
 
 if __name__ == "__main__":

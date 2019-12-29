@@ -14,6 +14,13 @@ class TinyWorldElements:
     PLAYER_ON_TARGET = torch.tensor([219, 212, 56], dtype=torch.uint8)
 
 
+class Directions:
+    UP = torch.tensor([-1, 0])
+    DOWN = torch.tensor([1, 0])
+    LEFT = torch.tensor([0, -1])
+    RIGHT = torch.tensor([0, 1])
+
+
 class SokobanElements:
     FLOOR = " "
     WALL = "#"
@@ -22,10 +29,12 @@ class SokobanElements:
     BOX_TARGET = "."
 
 
-ASCII_TO_PIXELS = dict([
-    (getattr(SokobanElements, name), getattr(TinyWorldElements, name))
+ASCII_TO_PIXELS = dict(
+    [
+        (getattr(SokobanElements, name), getattr(TinyWorldElements, name))
         for name in ["FLOOR", "WALL", "PLAYER", "BOX", "BOX_TARGET"]
-])
+    ]
+)
 
 
 # Map the difference between the chosen action node and whether there is a box on it (dx, dy, action_node_box)
