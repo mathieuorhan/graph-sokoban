@@ -10,7 +10,7 @@ from torch_geometric.data import Batch
 from data.constants import Transition
 from data.dataset import InMemorySokobanDataset
 from data.graph_env import GraphEnv
-from model.network import Net
+from model.network import Net, GATNet
 from rl.abstract_trainer import AbstractTrainer
 from rl.explore import epsilon_greedy_only_graph, best_from_nodes
 from rl.schedulers import AnnealingScheduler
