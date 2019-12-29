@@ -18,30 +18,32 @@ from data.graph_env import GraphEnv
 from model.network import Net
 from rl.explore import epsilon_greedy_only_graph, best_from_nodes
 from rl.optimize import optimize_model
+from rl.schedulers import AnnealingScheduler
 
-# Parameters
+# Data parameters
+TRAIN_PATH = "levels/dummy_small_100"
+TEST_PATH = "levels/dummy_small_100"
 
-TRAIN_PATH = "levels/very_easy/train"
-TEST_PATH = "levels/very_easy/test"
-
-TARGET_UPDATE = 10
+# RL parameters
+TARGET_UPDATE = 20
 GAMMA = 1.0
-EPS_0 = 0.1
-EPS_DECAY = 1.0
-BATCH_SIZE = 16
+EPS_MAX = 1.0
+EPS_MIN = 0.1
+EPS_STOP_STEP = 3000
+BATCH_SIZE = 32
 BUFFER_SIZE = 5000
-MAX_STEPS = 25
-MAX_STEPS_EVAL = 25
+MAX_STEPS = 10
+MAX_STEPS_EVAL = 10
 NUM_EPOCHS = 200
 SEED = 123
 WALLS_PROBS = 0
 STATIC_PROBS = 0
 
-# Deadlocks
-EARLY_STOP_DEADLOCKS = False
+# Deadlocks parameters
+EARLY_STOP_DEADLOCKS = True
 PENALIZE_DEADLOCKS = True
-REWARD_DEADLOCKS = -5
-GO_BACK_AFTER_DEADLOCKS = True
+REWARD_DEADLOCKS = -1
+GO_BACK_AFTER_DEADLOCKS = False
 
 # Opt parameters
 LEARNING_RATE = 0.00025
@@ -50,7 +52,7 @@ RMS_EPS = 0.01
 
 # Model parameters
 HIDDEN_CHANNELS = 64
-DEPTH = 3
+DEPTH = 4
 ACT = F.relu
 POOL_RATIOS = 0.5
 SUM_RES = False
@@ -109,14 +111,14 @@ dataset_test = InMemorySokobanDataset(TEST_PATH, embedding, device=device)
 # GraphEnv
 env = GraphEnv()
 
-# Epislon Greedy random number generator
+# Epislon Greedy andrandom number generator
 random_generator = random.Random()
-eps = EPS_0
+scheduler = AnnealingScheduler(EPS_MAX, EPS_MIN, EPS_STOP_STEP)
 
 episodes_seen = 0
 
 for epoch in range(NUM_EPOCHS):
-    print(f"=== EPOCH {epoch} [eps={eps:.2f}] ===")
+    print(f"=== EPOCH {epoch} [eps={scheduler.epsilon:.2f}] ===")
     policy_net.train()
     mean_total_reward = 0
     total_solved = 0
@@ -134,7 +136,12 @@ for epoch in range(NUM_EPOCHS):
             # Select and perform an action
             with torch.no_grad():
                 action_node = epsilon_greedy_only_graph(
-                    state, policy_net, eps, random_generator, WALLS_PROBS, STATIC_PROBS
+                    state,
+                    policy_net,
+                    scheduler.epsilon,
+                    random_generator,
+                    WALLS_PROBS,
+                    STATIC_PROBS,
                 )
                 next_state, reward, done, info = env.step(action_node)
             if info["deadlock"] and PENALIZE_DEADLOCKS:
@@ -176,8 +183,8 @@ for epoch in range(NUM_EPOCHS):
         if episodes_seen % TARGET_UPDATE == 0:
             target_net.load_state_dict(policy_net.state_dict())
         mean_total_reward += total_reward / len(dataset_train)
+        scheduler.step()
     mean_solved = total_solved / len(dataset_train)
-    eps *= EPS_DECAY
     print(
         f"[Train] Mean reward: {mean_total_reward:.2f}. Solved: {total_solved}/{len(dataset_train)} ({100*mean_solved:.2f}%). Deadlocks: {total_deadlocks}/{len(dataset_train)}"
     )
