@@ -3,6 +3,24 @@ import copy
 import torch
 from torch_geometric.data import Data
 
+from data.constants import ASCII_TO_PIXELS
+
+
+def ascii_to_img(filepath):
+    """Convert a level saved in .txt format to an RGB image.
+    Args: 
+        - filepath : str, path to the saved .txt file
+    Returns:
+        - state_pixels : (W, H, 3) np.uint8  
+    """
+    with open(filepath, 'r') as f:
+        pixels = []
+        for line in f:
+            pix = torch.cat([ASCII_TO_PIXELS[s][None] for s in line if s != '\n'])[None]
+            pixels.append(pix)
+        pixels = torch.cat(pixels, 0)
+    
+    return pixels.numpy()
 
 def all_boxes_on_all_targets(state):
     return all(state.x[state.x[:, 2] == 1][:, 0])
