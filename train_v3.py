@@ -10,7 +10,7 @@ from data.embedding import (
 )
 
 opt = options.parse_options()
-opt.embedding = NoWallsV2Embedding()
+opt.embedding = PositionalEmbedding()
 opt.unet_hidden_channels = 64
 opt.unet_depth = 3
 opt.unet_pool_ratios = 0.5

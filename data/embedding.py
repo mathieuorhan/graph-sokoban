@@ -232,6 +232,55 @@ class DirectionalEmbedding(NoWallsV2Embedding):
         return feats
 
 
+class PositionalEmbedding(NoWallsV2Embedding):
+    """Like NoWallV2, but with encoding of nodes position"""
+
+    NUM_NODES_FEATURES = 7
+
+    @classmethod
+    def embedding(cls, state):
+        """Embedding of a pixel RGB state
+
+        Return:
+            (W, H, 7) tensor
+        """
+
+        has_box = torch.all(state == elem.BOX, -1) | torch.all(
+            state == elem.BOX_ON_TARGET, -1
+        )
+        has_player = torch.all(state == elem.PLAYER, -1) | torch.all(
+            state == elem.PLAYER_ON_TARGET, -1
+        )
+        is_target = (
+            torch.all(state == elem.BOX_TARGET, -1)
+            | torch.all(state == elem.PLAYER_ON_TARGET, -1)
+            | torch.all(state == elem.BOX_ON_TARGET, -1)
+        )
+        is_wall = torch.all(state == elem.WALL, -1)
+        is_free = (~is_wall) & (~has_box) & (~has_player)
+        # wall_is_neighbor = None  # TODO
+
+        # Position of the node
+        w, h, _ = state.size()
+        x = torch.cat(
+            [torch.linspace(0., 1., w)[:, None] for _ in range(h)], -1
+        )
+        y = torch.cat(
+            [torch.linspace(0., 1., h)[None, :] for _ in range(w)], 0
+        )
+        embedded = torch.stack(
+            [
+                has_box.float(), 
+                has_player.float(), 
+                is_target.float(), 
+                is_wall.float(), 
+                is_free.float(),
+                x, y
+            ], dim=-1
+        )
+        return embedded
+
+
 if __name__ == "__main__":
     import gym
     import gym_sokoban

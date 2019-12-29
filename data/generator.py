@@ -27,14 +27,6 @@ def generate_dummy(width, height, n_box, n_levels, savedir, save_as_image):
         max_random_try = 10
 
         for _ in range(n_box):
-            # Place the targets
-            crit = True
-            while crit and nb_random_try < max_random_try:
-                x, y = np.random.randint(1, w + 1), np.random.randint(1, h + 1)
-                crit = lines[y][x] != se.FLOOR
-                nb_random_try += 1
-            lines[y][x] = se.BOX_TARGET
-
             # Place the boxes
             crit = True
             while crit and nb_random_try < max_random_try:
@@ -42,6 +34,14 @@ def generate_dummy(width, height, n_box, n_levels, savedir, save_as_image):
                 crit = lines[y][x] != se.FLOOR
                 nb_random_try += 1
             lines[y][x] = se.BOX
+            
+            # Place the targets
+            crit = True
+            while crit and nb_random_try < max_random_try:
+                x, y = np.random.randint(1, w + 1), np.random.randint(1, h + 1)
+                crit = lines[y][x] != se.FLOOR
+                nb_random_try += 1
+            lines[y][x] = se.BOX_TARGET
 
         # Place the player
         crit = True
