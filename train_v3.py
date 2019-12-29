@@ -2,7 +2,12 @@ import torch.nn.functional as F
 
 import options
 from rl.qlearning_trainer import QLearningTrainer
-from data.embedding import MinimalEmbedding, NoWallsEmbedding, NoWallsV2Embedding
+from data.embedding import (
+    MinimalEmbedding,
+    NoWallsEmbedding,
+    NoWallsV2Embedding,
+    DirectionalEmbedding,
+)
 
 opt = options.parse_options()
 opt.embedding = NoWallsV2Embedding()

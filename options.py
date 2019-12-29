@@ -8,8 +8,8 @@ def parse_options():
         "--logs", type=str, help="output dir to save the logs", default="./logs/",
     )
     # Data paths
-    parser.add_argument("--train_path", type=str, default="levels/dummy_10")
-    parser.add_argument("--test_path", type=str, default="levels/dummy_10")
+    parser.add_argument("--train_path", type=str, default="levels/dummy_small_100")
+    parser.add_argument("--test_path", type=str, default="levels/dummy_small_100")
 
     parser.add_argument("--target_update", type=int, default=10)
     parser.add_argument("--gamma", type=float, default=1.0)
