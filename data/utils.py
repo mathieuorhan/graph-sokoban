@@ -13,14 +13,15 @@ def ascii_to_img(filepath):
     Returns:
         - state_pixels : (W, H, 3) np.uint8  
     """
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         pixels = []
         for line in f:
-            pix = torch.cat([ASCII_TO_PIXELS[s][None] for s in line if s != '\n'])[None]
+            pix = torch.cat([ASCII_TO_PIXELS[s][None] for s in line if s != "\n"])[None]
             pixels.append(pix)
         pixels = torch.cat(pixels, 0)
-    
+
     return pixels.numpy()
+
 
 def all_boxes_on_all_targets(state):
     return all(state.x[state.x[:, 2] == 1][:, 0])
@@ -46,6 +47,8 @@ def are_off_target_boxes_in_corner(state):
     """Verify if any off target boxes is stuck in a corner
 
     This is useful to stop the game early and/or penalize
+
+    BUG (!!!) : it does not differentiate a corner and a lane
     """
     # Gather boxes not on targets
     boxes_idx = ((state.x[:, 0] == 1) & (state.x[:, 2] == 0)).nonzero().view(-1)
