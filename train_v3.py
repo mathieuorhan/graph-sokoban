@@ -11,8 +11,9 @@ opt.unet_depth = 3
 opt.unet_pool_ratios = 0.5
 opt.unet_sum_res = False
 opt.unet_act = F.relu
-
 trainer = QLearningTrainer(opt)
-trainer.train_one_epoch()
-trainer.eval_one_epoch()
+
+for _ in range(opt.epoch):
+    trainer.train_one_epoch()
+    trainer.eval_one_epoch()
 
