@@ -69,9 +69,6 @@ class GraphEnv:
         elif next_state.x[node_idx, 0]:
             # Compute case coordinates
             diff_pos = next_state.pos[node_idx] - next_state.pos[next_state.player_idx]
-            # print(next_state)
-            # print(diff_pos)
-            # dy, dx = diff_pos.squeeze()[0].item(), diff_pos.squeeze()[1].item()
             behind_pos = next_state.pos[node_idx] + diff_pos.squeeze()
             behind_idx = (
                 torch.all(torch.eq(next_state.pos, behind_pos), dim=-1).nonzero().item()
@@ -107,7 +104,7 @@ class GraphEnv:
         mask[next_state.player_idx] = 1
         next_state.mask = mask
 
-        info = dict()
+        info = {"deadlock": utils.are_off_target_boxes_in_corner(next_state)}
         self.state = next_state
         return next_state, reward, done, info
 
