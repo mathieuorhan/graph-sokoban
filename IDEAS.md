@@ -41,4 +41,9 @@ issue : verify
         ]
 ==> seems OK
 
+## Exploration :
+
+- Force to explore more state (count visits..)
+- Early stop if seems no progress are made
+- Early stop if same position is encountered too many times
 
