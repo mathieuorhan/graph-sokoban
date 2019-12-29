@@ -1,5 +1,7 @@
 import random
 
+from termcolor import colored
+
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -22,6 +24,12 @@ class AbstractTrainer:
         self.build_scheduler()
         self.epoch = 0
         self.episodes_seen = 0
+        self.update_count = 0
+        self.display_parameters()
+
+    def display_parameters(self):
+        for key, value in self.opt.items():
+            print(f"{colored(key, 'blue')}: {value}")
 
     def build_memory(self):
         self.memory = ReplayMemory(self.opt.buffer_size)
