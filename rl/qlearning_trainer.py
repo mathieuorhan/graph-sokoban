@@ -34,7 +34,7 @@ class QLearningTrainer(AbstractTrainer):
             self.opt.train_path, self.embedding, device=self.device
         )
         self.dataset_test = InMemorySokobanDataset(
-            self.opt.train_path, self.embedding, device=self.device
+            self.opt.test_path, self.embedding, device=self.device
         )
 
     def build_networks(self):
@@ -77,14 +77,20 @@ class QLearningTrainer(AbstractTrainer):
         for ep_idx in ep_indexes:
             # Generate one episode
             ep_info = self.train_one_episode(ep_idx)
+            self.episodes_seen += 1
 
             epoch_info["mean_cum_reward"] += ep_info["cum_reward"] / len(
                 self.dataset_train
             )
             epoch_info["deadlocks"] += ep_info["deadlocks"]
             epoch_info["solved"] += ep_info["solved"]
+            self.scheduler.step()
+            # Update the target network, copying all weights and biases in DQN
+            if self.episodes_seen % self.opt.target_update == 0:
+                self.target_net.load_state_dict(self.policy_net.state_dict())
 
         self.log_one_train_epoch(epoch_info)
+        self.epoch += 1
         return epoch_info
 
     def log_one_train_epoch(self, epoch_info):
@@ -224,6 +230,8 @@ class QLearningTrainer(AbstractTrainer):
         for param in self.policy_net.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+
+        self.update_count += 1
 
     def eval_one_epoch(self):
         self.policy_net.eval()
