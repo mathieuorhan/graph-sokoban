@@ -5,6 +5,7 @@ from torch_geometric.utils import remove_isolated_nodes
 
 from data.constants import TinyWorldElements as elem
 from data.constants import Directions
+import data.utils as utils
 
 
 class Embedding:
@@ -45,7 +46,7 @@ class Embedding:
         pos = torch.tensor(pos[nodes_mask], dtype=torch.long)
 
         # Action mask
-        player_idx = cls.get_player_idx(x)  # (1,)
+        player_idx = utils.find_player_idx(x)  # (1,)
         # (num_nodes, 1) bool
         mask = cls.get_node_neighbors_mask(player_idx, edges_index, x)
 
@@ -56,7 +57,7 @@ class Embedding:
         graph = Data(
             x=x,
             pos=pos,
-            edge_index=edges_index,
+            edge_index=edges_index.contiguous(),
             edge_attr=edge_attr,
             mask=mask,
             player_idx=player_idx,
@@ -120,12 +121,6 @@ class Embedding:
 
         embedded = torch.stack([has_box, has_player, is_target, is_wall], dim=-1)
         return embedded
-
-    @classmethod
-    def get_player_idx(cls, x):
-        _player_idx = (x[:, 1] == 1).nonzero().item()
-        player_idx = torch.tensor(_player_idx).long().unsqueeze(0)
-        return player_idx
 
     @classmethod
     def get_node_neighbors_mask(cls, idx, edge_index, x):
@@ -262,21 +257,19 @@ class PositionalEmbedding(NoWallsV2Embedding):
 
         # Position of the node
         w, h, _ = state.size()
-        x = torch.cat(
-            [torch.linspace(0., 1., w)[:, None] for _ in range(h)], -1
-        )
-        y = torch.cat(
-            [torch.linspace(0., 1., h)[None, :] for _ in range(w)], 0
-        )
+        x = torch.cat([torch.linspace(0.0, 1.0, w)[:, None] for _ in range(h)], -1)
+        y = torch.cat([torch.linspace(0.0, 1.0, h)[None, :] for _ in range(w)], 0)
         embedded = torch.stack(
             [
-                has_box.float(), 
-                has_player.float(), 
-                is_target.float(), 
-                is_wall.float(), 
+                has_box.float(),
+                has_player.float(),
+                is_target.float(),
+                is_wall.float(),
                 is_free.float(),
-                x, y
-            ], dim=-1
+                x,
+                y,
+            ],
+            dim=-1,
         )
         return embedded
 

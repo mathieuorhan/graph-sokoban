@@ -37,6 +37,12 @@ def is_neighbor_of_player(node_idx, mask):
     return node_idx in player_neighbors
 
 
+def find_player_idx(x):
+    _player_idx = (x[:, 1] == 1).nonzero().item()
+    player_idx = torch.tensor(_player_idx).long().unsqueeze(0)
+    return player_idx
+
+
 def clone_and_detach_data(state):
     """Clone and detach a torch_gemetric.data.Data"""
     return Data.from_dict(
@@ -86,16 +92,16 @@ def display_graph(state, q_values):
     # node color
     features = state.x.cpu()[:, :4]
     colors = torch.zeros(features.size(0))
-    colors[torch.all(features == torch.tensor([1, 0, 0, 0]), -1)] = 1
-    colors[torch.all(features == torch.tensor([0, 1, 0, 0]), -1)] = 2
-    colors[torch.all(features == torch.tensor([0, 0, 1, 0]), -1)] = 3
-    colors[torch.all(features == torch.tensor([0, 0, 0, 1]), -1)] = 4
-    colors[torch.all(features == torch.tensor([1, 0, 1, 0]), -1)] = 5
-    colors[torch.all(features == torch.tensor([0, 1, 1, 0]), -1)] = 6
+    colors[torch.all(features == torch.tensor([1.0, 0.0, 0.0, 0.0]), -1)] = 1
+    colors[torch.all(features == torch.tensor([0.0, 1.0, 0.0, 0.0]), -1)] = 2
+    colors[torch.all(features == torch.tensor([0.0, 0.0, 1.0, 0.0]), -1)] = 3
+    colors[torch.all(features == torch.tensor([0.0, 0.0, 0.0, 1.0]), -1)] = 4
+    colors[torch.all(features == torch.tensor([1.0, 0.0, 1.0, 0.0]), -1)] = 5
+    colors[torch.all(features == torch.tensor([0.0, 1.0, 1.0, 0.0]), -1)] = 6
 
     # display q values on each node
     q_values_text = {
-        i: f"[{i}]\n{value.item():.2f}" for i, value in enumerate(q_values)
+        i: f"[{i}]\n{value.item():.5f}" for i, value in enumerate(q_values)
     }
 
     plt.figure()
