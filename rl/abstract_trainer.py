@@ -12,6 +12,7 @@ from data.replay import ReplayMemory
 
 class AbstractTrainer:
     def __init__(self, opt):
+        self.info = {}
         self.opt = opt
         self.seed_experiment()
         self.device = self.get_device()
@@ -26,10 +27,35 @@ class AbstractTrainer:
         self.episodes_seen = 0
         self.update_count = 0
         self.display_parameters()
+        self.display_info()
 
     def display_parameters(self):
+        self.framed_log("PARAMETERS SUMMARY")
         for key, value in self.opt.items():
             print(f"{colored(key, 'blue')}: {value}")
+
+    def display_info(self):
+        self.framed_log("INFO")
+        for key, value in self.info.items():
+            print(f"{colored(key, 'blue')}: {value}")
+
+    def log_one_train_epoch(self, epoch_info):
+        for key, value in epoch_info.items():
+            if isinstance(value, float):
+                value = round(value, 4)
+            print(f"{colored(key, 'blue')}[train]: {value}")
+
+    def log_one_test_epoch(self, epoch_info):
+        for key, value in epoch_info.items():
+            if isinstance(value, float):
+                value = round(value, 4)
+            print(f"{colored(key, 'blue')}[eval]: {value}")
+
+    def framed_log(self, message):
+        line = "=" * len(message)
+        print(line)
+        print(message)
+        print(line)
 
     def build_memory(self):
         self.memory = ReplayMemory(self.opt.buffer_size)

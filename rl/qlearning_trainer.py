@@ -1,5 +1,6 @@
 import random
-
+import time
+from termcolor import colored
 from torch_geometric.nn import GraphUNet
 import torch
 import torch.nn as nn
@@ -24,6 +25,7 @@ class QLearningTrainer(AbstractTrainer):
         self.scheduler = AnnealingScheduler(
             self.opt.eps_max, self.opt.eps_min, self.opt.eps_stop_step
         )
+        self.info["scheduler"] = AnnealingScheduler
 
     def build_env(self):
         self.env = GraphEnv()
@@ -35,6 +37,8 @@ class QLearningTrainer(AbstractTrainer):
         self.dataset_test = InMemorySokobanDataset(
             self.opt.test_path, self.embedding, device=self.device
         )
+        self.info["train_size"] = len(self.dataset_train)
+        self.info["test_size"] = len(self.dataset_test)
 
     def build_networks(self):
         self.policy_net = GraphUNet(
@@ -57,10 +61,12 @@ class QLearningTrainer(AbstractTrainer):
             act=self.opt.unet_act,
         ).to(self.device)
 
+        self.info["model"] = "GraphUNet"
+
         self.target_net.eval()
 
     def train_one_epoch(self):
-        print(f"=== EPOCH {self.epoch} [eps={self.scheduler.epsilon:.2f}] ===")
+        self.framed_log(f"EPOCH {self.epoch}")
         self.policy_net.train()
 
         # Init counters
@@ -68,6 +74,9 @@ class QLearningTrainer(AbstractTrainer):
         epoch_info["mean_cum_reward"] = 0
         epoch_info["solved"] = 0
         epoch_info["deadlocks"] = 0
+        epoch_info["dataset size"] = len(self.dataset_train)
+        epoch_info["epsilon"] = self.scheduler.epsilon
+        epoch_info["time elapsed"] = time.time()
 
         # Sample the episodes
         ep_indexes = list(range(len(self.dataset_train)))
@@ -88,27 +97,10 @@ class QLearningTrainer(AbstractTrainer):
             if self.episodes_seen % self.opt.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
+        epoch_info["time elapsed"] = time.time() - epoch_info["time elapsed"]
         self.log_one_train_epoch(epoch_info)
         self.epoch += 1
         return epoch_info
-
-    def log_one_train_epoch(self, epoch_info):
-        reward = epoch_info["mean_cum_reward"]
-        solved = epoch_info["solved"]
-        deadlocks = epoch_info["deadlocks"]
-        train_size = len(self.dataset_train)
-        print(
-            f"[Train] Mean reward: {reward:.2f}. Solved: {solved}/{train_size}. Deadlocks: {deadlocks}/{train_size}"
-        )
-
-    def log_one_test_epoch(self, epoch_info):
-        reward = epoch_info["mean_cum_reward"]
-        solved = epoch_info["solved"]
-        # deadlocks = epoch_info["deadlocks"]
-        test_size = len(self.dataset_test)
-        print(
-            f"[Eval.] Mean reward: {reward:.2f}. Solved: {solved}/{test_size}."  # Deadlocks: {deadlocks}/{train_size}"
-        )
 
     def train_one_episode(self, episode_idx):
         ep_info = {}
@@ -239,7 +231,8 @@ class QLearningTrainer(AbstractTrainer):
         epoch_info = {}
         epoch_info["mean_cum_reward"] = 0
         epoch_info["solved"] = 0
-        epoch_info["deadlocks"] = 0
+        epoch_info["dataset size"] = len(self.dataset_test)
+        # epoch_info["deadlocks"] = 0
 
         # Sample the episodes
         ep_indexes = list(range(len(self.dataset_test)))
@@ -251,7 +244,7 @@ class QLearningTrainer(AbstractTrainer):
             epoch_info["mean_cum_reward"] += ep_info["cum_reward"] / len(
                 self.dataset_test
             )
-            epoch_info["deadlocks"] += ep_info["deadlocks"]
+            # epoch_info["deadlocks"] += ep_info["deadlocks"]
             epoch_info["solved"] += ep_info["solved"]
 
         self.log_one_test_epoch(epoch_info)
