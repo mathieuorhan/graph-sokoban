@@ -47,7 +47,8 @@ def MPWithEdgesFeatures(MessagePassing):
         self.in_channels = in_channels
         self.out_channels = out_channels
 
-        self.lin_
+        self.lin_nodes
+        self.lin_edges
 
     def forward(self, x, edge_index, edge_attr):
         pass
@@ -55,5 +56,5 @@ def MPWithEdgesFeatures(MessagePassing):
     def update(self):
         pass
 
-    def message(self):
+    def message(self, x_i, x_j, edge_attr):
         pass

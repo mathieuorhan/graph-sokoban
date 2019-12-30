@@ -7,6 +7,7 @@ from data.embedding import (
     NoWallsEmbedding,
     NoWallsV2Embedding,
     DirectionalEmbedding,
+    PositionalEmbedding,
 )
 
 opt = options.parse_options()
