@@ -74,9 +74,9 @@ def count_boxes(state):
     return (state.x[:, 0] == 1).sum().item()
 
 
-def plot_graph(state, q_values):
-    """Plot a graph state using networkx."""
-    pos_map = {i: pos.numpy() for i, pos in enumerate(state.pos)}
+def display_graph(state, q_values):
+    """display a graph state using networkx."""
+    pos_map = {i: pos.numpy() for i, pos in enumerate(state.pos.cpu())}
 
     # Swap x, y, invert y
     pos_map = {i: np.array([x, y]) for i, (y, x) in pos_map.items()}
@@ -84,7 +84,7 @@ def plot_graph(state, q_values):
     pos_map = {i: np.array([x, max_y - y]) for i, (x, y) in pos_map.items()}
 
     # node color
-    features = state.x[:, :4]
+    features = state.x.cpu()[:, :4]
     colors = torch.zeros(features.size(0))
     colors[torch.all(features == torch.tensor([1, 0, 0, 0]), -1)] = 1
     colors[torch.all(features == torch.tensor([0, 1, 0, 0]), -1)] = 2
@@ -93,10 +93,12 @@ def plot_graph(state, q_values):
     colors[torch.all(features == torch.tensor([1, 0, 1, 0]), -1)] = 5
     colors[torch.all(features == torch.tensor([0, 1, 1, 0]), -1)] = 6
 
+    # display q values on each node
     q_values_text = {
         i: f"[{i}]\n{value.item():.2f}" for i, value in enumerate(q_values)
     }
 
+    plt.figure()
     nx.draw(
         to_networkx(state),
         cmap=plt.get_cmap("tab10"),
@@ -107,6 +109,3 @@ def plot_graph(state, q_values):
         font_color="w",
         pos=pos_map,
     )
-    plt.draw()
-    plt.pause(1)
-    plt.clf()

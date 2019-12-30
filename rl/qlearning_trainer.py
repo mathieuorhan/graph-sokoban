@@ -1,5 +1,7 @@
 import random
 import time
+import os
+import matplotlib.pyplot as plt
 from termcolor import colored
 from torch_geometric.nn import GraphUNet
 import torch
@@ -10,7 +12,7 @@ from torch_geometric.data import Batch
 
 from data.constants import Transition
 from data.dataset import InMemorySokobanDataset
-from data.utils import plot_graph
+from data.utils import display_graph
 from data.graph_env import GraphEnv
 from model.network import Net, GATNet
 from rl.abstract_trainer import AbstractTrainer
@@ -285,8 +287,28 @@ class QLearningTrainer(AbstractTrainer):
                 action_node = best_from_nodes(scores, state)
                 next_state, reward, done, info = self.env.step(action_node)
 
-                # Plot the state
-                plot_graph(state.to("cpu"), scores.cpu())
+                # Save the state display
+                display_graph(state, scores)
+                try:
+                    os.mkdir("./logs/{}/rendering".format(self.opt.training_id))
+                except:
+                    pass
+                try:
+                    os.mkdir(
+                        os.path.join(
+                            "./logs/{}/rendering".format(self.opt.training_id),
+                            "epoch{}".format(self.epoch),
+                        )
+                    )
+                except:
+                    pass
+                plt.savefig(
+                    os.path.join(
+                        "./logs/{}/rendering".format(self.opt.training_id),
+                        "epoch{}/{}.png".format(self.epoch, t),
+                    )
+                )
+                plt.close()
 
             if done:
                 break

@@ -7,6 +7,15 @@ def parse_options():
     parser.add_argument(
         "--logs", type=str, help="output dir to save the logs", default="./logs/",
     )
+    parser.add_argument(
+        "--render", type=bool, help="save renderings of a same level", default=True,
+    )
+    parser.add_argument(
+        "--render_every",
+        type=int,
+        help="number of iterations to wait for saving the rendering",
+        default=10,
+    )
     # Data paths
     parser.add_argument("--train_path", type=str, default="levels/dummy_small_100")
     parser.add_argument("--test_path", type=str, default="levels/dummy_small_100")
