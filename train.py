@@ -1,6 +1,7 @@
 import torch.nn.functional as F
 
 import options
+import logger
 from rl.qlearning_trainer import QLearningTrainer
 from data.embedding import (
     MinimalEmbedding,
@@ -17,6 +18,10 @@ opt.unet_depth = 3
 opt.unet_pool_ratios = 0.5
 opt.unet_sum_res = False
 opt.unet_act = F.relu
+
+# Setup logger
+logger.setup_logger(opt.logs)
+
 trainer = QLearningTrainer(opt)
 
 for _ in range(opt.epochs):

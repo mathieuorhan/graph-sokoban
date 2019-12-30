@@ -1,4 +1,5 @@
 import random
+import logging
 
 from termcolor import colored
 
@@ -12,6 +13,7 @@ from data.replay import ReplayMemory
 
 class AbstractTrainer:
     def __init__(self, opt):
+        self.logger = logging.getLogger()
         self.info = {}
         self.opt = opt
         self.seed_experiment()
@@ -33,26 +35,33 @@ class AbstractTrainer:
         self.framed_log("PARAMETERS SUMMARY")
         for key, value in self.opt.items():
             print(f"{colored(key, 'blue')}: {value}")
+            self.logger.info(f"{key}: {value}")
 
     def display_info(self):
         self.framed_log("INFO")
         for key, value in self.info.items():
             print(f"{colored(key, 'blue')}: {value}")
+            self.logger.info(f"{key}: {value}")
 
     def log_one_train_epoch(self, epoch_info):
         for key, value in epoch_info.items():
             if isinstance(value, float):
                 value = round(value, 4)
             print(f"{colored(key, 'blue')}[train]: {value}")
+            self.logger.info(f"{key}[train]: {value}")
 
     def log_one_test_epoch(self, epoch_info):
         for key, value in epoch_info.items():
             if isinstance(value, float):
                 value = round(value, 4)
             print(f"{colored(key, 'blue')}[eval]: {value}")
+            self.logger.info(f"{key}[eval]: {value}")
 
     def framed_log(self, message):
         line = "=" * len(message)
+        self.logger.info(line)
+        self.logger.info(message)
+        self.logger.info(line)
         print(line)
         print(message)
         print(line)
