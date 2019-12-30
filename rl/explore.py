@@ -18,7 +18,7 @@ def best_from_nodes(scores, state):
     return idx_best
 
 
-def epsilon_greedy(state, net, eps):
+def epsilon_greedy(state, policy_net, eps):
     """Epsilon-greedy exploration
     
     Args:
@@ -30,7 +30,13 @@ def epsilon_greedy(state, net, eps):
     """
     if random.random() > eps:
         with torch.no_grad():
-            scores = net(state.x, state.edge_index)
+            scores, _, _ = policy_net(
+                x=state.x,
+                edge_index=state.edge_index,
+                edge_attr=state.edge_attr,
+                u=None,
+                batch=None,
+            )
             chosen_idx = best_from_nodes(scores, state)
     else:
         # Sample randomly a node among the neighboring nodes of the player

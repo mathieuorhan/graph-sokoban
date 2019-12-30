@@ -39,22 +39,3 @@ class GCNConv(MessagePassing):
         # Step 5: Return new node embeddings.
         return aggr_out
 
-
-def MPWithEdgesFeatures(MessagePassing):
-    # TODO
-    def __init__(self, in_channels, out_channels):
-        super().__init__(aggr="add", flow="source_to_target")
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-
-        self.lin_nodes
-        self.lin_edges
-
-    def forward(self, x, edge_index, edge_attr):
-        pass
-
-    def update(self):
-        pass
-
-    def message(self, x_i, x_j, edge_attr):
-        pass

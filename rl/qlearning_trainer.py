@@ -15,6 +15,7 @@ from data.dataset import InMemorySokobanDataset
 from data.utils import display_graph
 from data.graph_env import GraphEnv
 from model.network import Net, GATNet
+from model.meta import MetaGNN
 from rl.abstract_trainer import AbstractTrainer
 from rl.explore import epsilon_greedy, best_from_nodes
 from rl.schedulers import AnnealingScheduler
@@ -44,27 +45,44 @@ class QLearningTrainer(AbstractTrainer):
         self.info["test_size"] = len(self.dataset_test)
 
     def build_networks(self):
-        self.policy_net = GraphUNet(
-            in_channels=self.embedding.NUM_NODES_FEATURES,
-            hidden_channels=self.opt.unet_hidden_channels,
-            out_channels=1,
-            depth=self.opt.unet_depth,
-            pool_ratios=self.opt.unet_pool_ratios,
-            sum_res=self.opt.unet_sum_res,
-            act=self.opt.unet_act,
-        ).to(self.device)
+        # self.policy_net = GraphUNet(
+        #     in_channels=self.embedding.NUM_NODES_FEATURES,
+        #     hidden_channels=self.opt.unet_hidden_channels,
+        #     out_channels=1,
+        #     depth=self.opt.unet_depth,
+        #     pool_ratios=self.opt.unet_pool_ratios,
+        #     sum_res=self.opt.unet_sum_res,
+        #     act=self.opt.unet_act,
+        # ).to(self.device)
 
-        self.target_net = GraphUNet(
-            in_channels=self.embedding.NUM_NODES_FEATURES,
-            hidden_channels=self.opt.unet_hidden_channels,
-            out_channels=1,
-            depth=self.opt.unet_depth,
-            pool_ratios=self.opt.unet_pool_ratios,
-            sum_res=self.opt.unet_sum_res,
-            act=self.opt.unet_act,
-        ).to(self.device)
+        # self.target_net = GraphUNet(
+        #     in_channels=self.embedding.NUM_NODES_FEATURES,
+        #     hidden_channels=self.opt.unet_hidden_channels,
+        #     out_channels=1,
+        #     depth=self.opt.unet_depth,
+        #     pool_ratios=self.opt.unet_pool_ratios,
+        #     sum_res=self.opt.unet_sum_res,
+        #     act=self.opt.unet_act,
+        # ).to(self.device)
 
-        self.info["model"] = "GraphUNet"
+        # self.info["model"] = "GraphUNet"
+        # self.policy_net = Net(nodes_features=self.embedding.NUM_NODES_FEATURES).to(
+        #     self.device
+        # )
+        # self.target_net = Net(nodes_features=self.embedding.NUM_NODES_FEATURES).to(
+        #     self.device
+        # )
+        n_nodes_features = self.embedding.NUM_NODES_FEATURES
+        n_edges_features = self.embedding.NUM_EDGES_FEATURES
+        hiddens = 64
+        self.policy_net = MetaGNN(n_nodes_features, n_edges_features, hiddens).to(
+            self.device
+        )
+        self.target_net = (
+            MetaGNN(n_nodes_features, n_edges_features, hiddens)
+            .to(self.device)
+            .to(self.device)
+        )
 
         self.target_net.eval()
 
@@ -178,8 +196,12 @@ class QLearningTrainer(AbstractTrainer):
 
         state_action_values = torch.zeros(self.opt.batch_size, device=self.device)
         batch_idx = state_batch.batch.to(self.device)
-        state_action_values_batch = self.policy_net(
-            state_batch.x, state_batch.edge_index, batch_idx
+        state_action_values_batch, _, _ = self.policy_net(
+            x=state_batch.x,
+            edge_index=state_batch.edge_index,
+            edge_attr=state_batch.edge_attr,
+            u=None,
+            batch=batch_idx,
         )
 
         # TODO Try to remove for loop
@@ -193,15 +215,17 @@ class QLearningTrainer(AbstractTrainer):
             next_state_values = torch.zeros(
                 (self.opt.batch_size, 1), device=self.device
             )
-            non_final_batch_idx = non_final_next_states.batch.to(self.device)
-            target_prediction = self.target_net(
-                non_final_next_states.x,
-                non_final_next_states.edge_index,
-                non_final_batch_idx,
-            )
-            neighbor_mask = non_final_next_states.mask.squeeze()
-
             if any(non_final_mask):
+                non_final_batch_idx = non_final_next_states.batch.to(self.device)
+                target_prediction, _, _ = self.target_net(
+                    x=non_final_next_states.x,
+                    edge_index=non_final_next_states.edge_index,
+                    edge_attr=non_final_next_states.edge_attr,
+                    u=None,
+                    batch=non_final_batch_idx,
+                )
+                neighbor_mask = non_final_next_states.mask.squeeze()
+
                 next_state_values[non_final_mask], _ = scatter_max(
                     target_prediction[neighbor_mask],
                     non_final_batch_idx[neighbor_mask],
@@ -254,54 +278,65 @@ class QLearningTrainer(AbstractTrainer):
         return epoch_info
 
     def eval_one_episode(self, episode_idx):
-        ep_info = {}
-        ep_info["cum_reward"] = 0.0
-        ep_info["solved"] = 0
-        ep_info["deadlocks"] = 0
-        # Initialize the environment and state
-        self.env.reset(self.dataset_test[episode_idx])
-        for t in range(self.opt.max_steps_eval):
-            state = self.env.render()
-            # Select and perform an action
-            with torch.no_grad():
-                scores = self.policy_net(state.x, state.edge_index)
+        with torch.no_grad():
+            ep_info = {}
+            ep_info["cum_reward"] = 0.0
+            ep_info["solved"] = 0
+            ep_info["deadlocks"] = 0
+            # Initialize the environment and state
+            self.env.reset(self.dataset_test[episode_idx])
+            for t in range(self.opt.max_steps_eval):
+                state = self.env.render()
+                # Select and perform an action
+                scores, _, _ = self.policy_net(
+                    x=state.x,
+                    edge_index=state.edge_index,
+                    edge_attr=state.edge_attr,
+                    u=None,
+                    batch=None,
+                )
                 action_node = best_from_nodes(scores, state)
                 next_state, reward, done, info = self.env.step(action_node)
-            # Observe new state
-            if done:
-                ep_info["solved"] += 1
-                break
-            else:
-                ep_info["cum_reward"] += reward
+                # Observe new state
+                if done:
+                    ep_info["solved"] += 1
+                    break
+                else:
+                    ep_info["cum_reward"] += reward
 
-        return ep_info
+            return ep_info
 
     def render_one_episode(self, episode_idx):
-        # Initialize the environment and state
-        self.env.reset(self.dataset_test[episode_idx])
-        for t in range(self.opt.max_steps_eval):
-            state = self.env.render()
-            # Select and perform an action
-            with torch.no_grad():
-                scores = self.policy_net(state.x, state.edge_index)
+        with torch.no_grad():
+            # Initialize the environment and state
+            self.env.reset(self.dataset_test[episode_idx])
+            for t in range(self.opt.max_steps_eval):
+                state = self.env.render()
+                # Select and perform an action
+                scores, _, _ = self.policy_net(
+                    x=state.x,
+                    edge_index=state.edge_index,
+                    edge_attr=state.edge_attr,
+                    u=None,
+                    batch=None,
+                )
                 action_node = best_from_nodes(scores, state)
+
                 next_state, reward, done, info = self.env.step(action_node)
 
                 # Save the state display
                 display_graph(state, scores)
-                try:
-                    os.mkdir("./logs/{}/rendering".format(self.opt.training_id))
-                except:
-                    pass
-                try:
-                    os.mkdir(
-                        os.path.join(
-                            "./logs/{}/rendering".format(self.opt.training_id),
-                            "epoch{}".format(self.epoch),
-                        )
-                    )
-                except:
-                    pass
+                os.makedirs(
+                    "./logs/{}/rendering".format(self.opt.training_id), exist_ok=True
+                )
+                os.makedirs(
+                    os.path.join(
+                        "./logs/{}/rendering".format(self.opt.training_id),
+                        "epoch{}".format(self.epoch),
+                    ),
+                    exist_ok=True,
+                )
+
                 plt.savefig(
                     os.path.join(
                         "./logs/{}/rendering".format(self.opt.training_id),
@@ -310,5 +345,5 @@ class QLearningTrainer(AbstractTrainer):
                 )
                 plt.close()
 
-            if done:
-                break
+                if done:
+                    break
