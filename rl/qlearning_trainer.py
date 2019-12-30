@@ -10,6 +10,7 @@ from torch_geometric.data import Batch
 
 from data.constants import Transition
 from data.dataset import InMemorySokobanDataset
+from data.utils import plot_graph
 from data.graph_env import GraphEnv
 from model.network import Net, GATNet
 from rl.abstract_trainer import AbstractTrainer
@@ -273,3 +274,19 @@ class QLearningTrainer(AbstractTrainer):
 
         return ep_info
 
+    def render_one_episode(self, episode_idx):
+        # Initialize the environment and state
+        self.env.reset(self.dataset_test[episode_idx])
+        for t in range(self.opt.max_steps_eval):
+            state = self.env.render()
+            # Select and perform an action
+            with torch.no_grad():
+                scores = self.policy_net(state.x, state.edge_index)
+                action_node = best_from_nodes(scores, state)
+                next_state, reward, done, info = self.env.step(action_node)
+
+                # Plot the state
+                plot_graph(state.to("cpu"), scores.cpu())
+
+            if done:
+                break

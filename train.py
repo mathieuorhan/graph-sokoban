@@ -23,3 +23,5 @@ for _ in range(opt.epochs):
     trainer.train_one_epoch()
     trainer.eval_one_epoch()
 
+# Plot an episode
+trainer.render_one_episode(0)

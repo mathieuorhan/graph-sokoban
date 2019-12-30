@@ -1,7 +1,11 @@
 import copy
+import networkx as nx
+import matplotlib.pyplot as plt
+import numpy as np
 
 import torch
 from torch_geometric.data import Data
+from torch_geometric.utils.convert import to_networkx
 
 from data.constants import ASCII_TO_PIXELS
 
@@ -69,3 +73,40 @@ def are_off_target_boxes_in_corner(state):
 def count_boxes(state):
     return (state.x[:, 0] == 1).sum().item()
 
+
+def plot_graph(state, q_values):
+    """Plot a graph state using networkx."""
+    pos_map = {i: pos.numpy() for i, pos in enumerate(state.pos)}
+
+    # Swap x, y, invert y
+    pos_map = {i: np.array([x, y]) for i, (y, x) in pos_map.items()}
+    max_y = max([y for x, y in pos_map.values()])
+    pos_map = {i: np.array([x, max_y - y]) for i, (x, y) in pos_map.items()}
+
+    # node color
+    features = state.x[:, :4]
+    colors = torch.zeros(features.size(0))
+    colors[torch.all(features == torch.tensor([1, 0, 0, 0]), -1)] = 1
+    colors[torch.all(features == torch.tensor([0, 1, 0, 0]), -1)] = 2
+    colors[torch.all(features == torch.tensor([0, 0, 1, 0]), -1)] = 3
+    colors[torch.all(features == torch.tensor([0, 0, 0, 1]), -1)] = 4
+    colors[torch.all(features == torch.tensor([1, 0, 1, 0]), -1)] = 5
+    colors[torch.all(features == torch.tensor([0, 1, 1, 0]), -1)] = 6
+
+    q_values_text = {
+        i: f"[{i}]\n{value.item():.2f}" for i, value in enumerate(q_values)
+    }
+
+    nx.draw(
+        to_networkx(state),
+        cmap=plt.get_cmap("tab10"),
+        node_color=colors.numpy(),
+        labels=q_values_text,
+        node_size=4000,
+        linewidths=1,
+        font_color="w",
+        pos=pos_map,
+    )
+    plt.draw()
+    plt.pause(1)
+    plt.clf()
