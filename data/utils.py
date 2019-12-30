@@ -27,9 +27,9 @@ def all_boxes_on_all_targets(state):
     return all(state.x[state.x[:, 2] == 1][:, 0])
 
 
-def is_neighbor_of_player(state, node_idx):
+def is_neighbor_of_player(node_idx, mask):
     """Check if a node is in the neighborhood of the player"""
-    player_neighbors = state.edge_index[:, state.edge_index[0] == state.player_idx][1]
+    player_neighbors = mask.nonzero()
     return node_idx in player_neighbors
 
 

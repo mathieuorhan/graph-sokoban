@@ -28,7 +28,7 @@ class QLearningTrainer(AbstractTrainer):
         self.info["scheduler"] = AnnealingScheduler
 
     def build_env(self):
-        self.env = GraphEnv()
+        self.env = GraphEnv(embedding=self.embedding, device=self.device)
 
     def build_datasets(self):
         self.dataset_train = InMemorySokobanDataset(

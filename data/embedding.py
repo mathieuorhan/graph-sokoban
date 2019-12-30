@@ -46,8 +46,8 @@ class Embedding:
 
         # Action mask
         player_idx = cls.get_player_idx(x)  # (1,)
+        # (num_nodes, 1) bool
         mask = cls.get_node_neighbors_mask(player_idx, edges_index, x)
-        mask = mask.unsqueeze(1).bool()  # (num_nodes, 1) bool
 
         # Edge features, None or (num_edges_features)
         edge_attr = cls.get_edge_attr(edges_index, x, pos)
@@ -134,7 +134,7 @@ class Embedding:
         mask = torch.zeros(x.size(0), dtype=torch.int32)
         mask[neighbors_index] = 1
         mask[idx] = 1
-        return mask
+        return mask.unsqueeze(1).bool()
 
 
 class MinimalEmbedding(Embedding):
@@ -207,7 +207,7 @@ class NoWallsV2Embedding(NoWallsEmbedding):
         mask = torch.zeros(x.size(0), dtype=torch.int32)
         mask[neighbors_index] = 1
         mask[x[:, 3] == 1] = 0  # Remove walls
-        return mask
+        return mask.unsqueeze(1).bool()
 
 
 class DirectionalEmbedding(NoWallsV2Embedding):

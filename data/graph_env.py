@@ -16,8 +16,10 @@ class GraphEnv:
     OFF_BOX_REWARD = -1
     FINISH_REWARD = 10
 
-    def __init__(self):
+    def __init__(self, embedding, device):
         self.state = None
+        self.embedding = embedding
+        self.device = device
 
     def reset(self, init_state):
         """
@@ -55,7 +57,7 @@ class GraphEnv:
             pass
         else:
             assert utils.is_neighbor_of_player(
-                next_state, node_idx
+                node_idx, next_state.mask
             ), "node_idx is not reachable"
         # If void, move
         if not next_state.x[node_idx, 0] and not next_state.x[node_idx, 3]:
@@ -96,13 +98,9 @@ class GraphEnv:
                 pass
 
         # Recompute mask
-        neighbors_index = next_state.edge_index[
-            :, next_state.edge_index[0] == next_state.player_idx
-        ][1]
-        mask = torch.zeros_like(next_state.mask)
-        mask[neighbors_index] = 1
-        mask[next_state.player_idx] = 1
-        next_state.mask = mask
+        next_state.mask = self.embedding.get_node_neighbors_mask(
+            next_state.player_idx, next_state.edge_index, next_state.x
+        ).to(self.device)
 
         info = {"deadlock": utils.are_off_target_boxes_in_corner(next_state)}
         self.state = next_state
