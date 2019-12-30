@@ -12,14 +12,13 @@ from data.dataset import InMemorySokobanDataset
 from data.graph_env import GraphEnv
 from model.network import Net, GATNet
 from rl.abstract_trainer import AbstractTrainer
-from rl.explore import epsilon_greedy_only_graph, best_from_nodes
+from rl.explore import epsilon_greedy, best_from_nodes
 from rl.schedulers import AnnealingScheduler
 
 
 class QLearningTrainer(AbstractTrainer):
     def __init__(self, opt):
         super().__init__(opt)
-        self.random_generator = random.Random()
 
     def build_scheduler(self):
         self.scheduler = AnnealingScheduler(
@@ -123,13 +122,8 @@ class QLearningTrainer(AbstractTrainer):
             state = self.env.render()
             # Select and perform an action
             with torch.no_grad():
-                action_node = epsilon_greedy_only_graph(
-                    state,
-                    self.policy_net,
-                    self.scheduler.epsilon,
-                    self.random_generator,
-                    self.opt.walls_prob,
-                    self.opt.static_prob,
+                action_node = epsilon_greedy(
+                    state, self.policy_net, self.scheduler.epsilon
                 )
                 next_state, reward, done, info = self.env.step(action_node)
             if info["deadlock"] and not self.opt.no_penalize_deadlocks:
@@ -177,10 +171,9 @@ class QLearningTrainer(AbstractTrainer):
         if any(non_final_mask):
             non_final_next_states = Batch.from_data_list(
                 [s for s in batch.next_state if s is not None]
-            ).to(self.device)
+            )
 
-        state_batch = Batch.from_data_list(batch.state)
-        # state_batch = state_batch.to(device)
+        state_batch = Batch.from_data_list(batch.state)  # .to(self.device)
         action_batch = torch.stack(batch.action)
         reward_batch = torch.stack(batch.reward)
 
@@ -189,8 +182,9 @@ class QLearningTrainer(AbstractTrainer):
         # for each batch state according to policy_net
 
         state_action_values = torch.zeros(self.opt.batch_size, device=self.device)
+        batch_idx = state_batch.batch.to(self.device)
         state_action_values_batch = self.policy_net(
-            state_batch.x, state_batch.edge_index
+            state_batch.x, state_batch.edge_index, batch_idx
         )
 
         # TODO Try to remove for loop
@@ -204,14 +198,18 @@ class QLearningTrainer(AbstractTrainer):
             next_state_values = torch.zeros(
                 (self.opt.batch_size, 1), device=self.device
             )
+            non_final_batch_idx = non_final_next_states.batch.to(self.device)
             target_prediction = self.target_net(
-                non_final_next_states.x, non_final_next_states.edge_index
+                non_final_next_states.x,
+                non_final_next_states.edge_index,
+                non_final_batch_idx,
             )
             neighbor_mask = non_final_next_states.mask.squeeze()
+
             if any(non_final_mask):
                 next_state_values[non_final_mask], _ = scatter_max(
                     target_prediction[neighbor_mask],
-                    non_final_next_states.batch[neighbor_mask],
+                    non_final_batch_idx[neighbor_mask],
                     dim=0,
                 )
             next_state_values = next_state_values.squeeze()
@@ -227,8 +225,9 @@ class QLearningTrainer(AbstractTrainer):
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
+        if not self.opt.no_clamp_gradient:
+            for param in self.policy_net.parameters():
+                param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         self.update_count += 1
@@ -270,9 +269,7 @@ class QLearningTrainer(AbstractTrainer):
             # Select and perform an action
             with torch.no_grad():
                 scores = self.policy_net(state.x, state.edge_index)
-                action_node = best_from_nodes(
-                    scores, state, self.opt.walls_prob == 0, self.opt.static_prob == 0,
-                )
+                action_node = best_from_nodes(scores, state)
                 next_state, reward, done, info = self.env.step(action_node)
             # Observe new state
             if done:

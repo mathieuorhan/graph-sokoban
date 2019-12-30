@@ -30,6 +30,7 @@ def parse_options():
     parser.add_argument("--lr", type=float, default=0.00025)
     parser.add_argument("--rms_alpha", type=float, default=0.95)
     parser.add_argument("--rms_eps", type=float, default=0.01)
+    parser.add_argument("--no_clamp_gradient", default=True, action="store_false")
 
     # Deadlocks # BUG with deadlocks : disabled !
     parser.add_argument("--early_stop_deadlocks", default=False, action="store_true")
