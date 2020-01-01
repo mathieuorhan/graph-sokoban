@@ -16,10 +16,11 @@ class GraphEnv:
     OFF_BOX_REWARD = -1
     FINISH_REWARD = 10
 
-    def __init__(self, embedding, device):
+    def __init__(self, embedding, device, stop_if_unreachable=True):
         self.state = None
         self.embedding = embedding
         self.device = device
+        self.stop_if_unreachable = stop_if_unreachable
 
     def reset(self, init_state):
         """
@@ -39,6 +40,7 @@ class GraphEnv:
             - done: bool
             - info: dict
         """
+        node_idx = node_idx.squeeze()
         assert (
             self.state is not None
         ), "Call reset with an initial state before using step"
@@ -55,12 +57,15 @@ class GraphEnv:
         # If self, do nothing
         if next_state.player_idx == node_idx:
             pass
-        else:
-            assert utils.is_neighbor_of_player(
-                node_idx, next_state.mask
-            ), "node_idx is not reachable"
+        elif not node_idx.nelement():
+            raise ValueError("node_idx is empty")
+        elif not utils.is_neighbor_of_player(node_idx, next_state.mask):
+            if self.stop_if_unreachable:
+                raise ValueError("node_idx is unreachable")
+            else:
+                pass
         # If void, move
-        if not next_state.x[node_idx, 0] and not next_state.x[node_idx, 3]:
+        elif not next_state.x[node_idx, 0] and not next_state.x[node_idx, 3]:
             next_state.x[next_state.player_idx, 1] = 0
             next_state.x[node_idx, 1] = 1
             next_state.player_idx = node_idx.long().unsqueeze(0)
@@ -108,3 +113,4 @@ class GraphEnv:
 
     def render(self):
         return self.state
+
