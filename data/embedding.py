@@ -274,6 +274,10 @@ class PositionalEmbedding(NoWallsV2Embedding):
         return embedded
 
 
+class DirectionalPositionalEmbedding(DirectionalEmbedding, PositionalEmbedding):
+    pass
+
+
 if __name__ == "__main__":
     import gym
     import gym_sokoban
