@@ -76,6 +76,25 @@ def are_off_target_boxes_in_corner(state):
     return is_deadlock
 
 
+def direction_to_node_idx(state, direction):
+    """Direction to node index
+
+    Args:
+        - state: require at least DirectionalEmbedding
+        - direction: long tensor (on same device as state) in {0, ..., 3}
+
+    Returns:
+        - node_idx: long tensor (on same device as state) of shape (1,) or (0,)
+    """
+    # Get neighbors edges indexes (directed from player_idx)
+    nb_edge_idxs = (state.edge_index[0, :] == state.player_idx).nonzero()
+
+    # Get idx corresponding to given direction (if possible)
+    dir_edge_idx = nb_edge_idxs[state.edge_attr[nb_edge_idxs, direction] == 1]
+    node_idx = state.edge_index[1, dir_edge_idx]
+    return node_idx
+
+
 def count_boxes(state):
     return (state.x[:, 0] == 1).sum().item()
 
