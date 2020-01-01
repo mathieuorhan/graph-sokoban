@@ -78,12 +78,10 @@ class QLearningTrainer(AbstractTrainer):
         self.policy_net = MetaGNN(n_nodes_features, n_edges_features, hiddens).to(
             self.device
         )
-        self.target_net = (
-            MetaGNN(n_nodes_features, n_edges_features, hiddens)
-            .to(self.device)
-            .to(self.device)
+        self.target_net = MetaGNN(n_nodes_features, n_edges_features, hiddens).to(
+            self.device
         )
-
+        self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
 
     def train_one_epoch(self):
@@ -115,7 +113,7 @@ class QLearningTrainer(AbstractTrainer):
             epoch_info["solved"] += ep_info["solved"]
             self.scheduler.step()
             # Update the target network, copying all weights and biases in DQN
-            if self.episodes_seen % self.opt.target_update == 0:
+            if self.update_count % self.opt.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
         epoch_info["time elapsed"] = time.time() - epoch_info["time elapsed"]
@@ -139,8 +137,8 @@ class QLearningTrainer(AbstractTrainer):
                     state, self.policy_net, self.scheduler.epsilon
                 )
                 next_state, reward, done, info = self.env.step(action_node)
-            if info["deadlock"] and not self.opt.no_penalize_deadlocks:
-                reward += self.opt.reward_deadlocks
+            # if info["deadlock"] and not self.opt.no_penalize_deadlocks:
+            #     reward += self.opt.reward_deadlocks
             ep_info["cum_reward"] += reward
             reward = torch.tensor(reward, device=self.device)
 
@@ -158,13 +156,13 @@ class QLearningTrainer(AbstractTrainer):
                 ep_info["solved"] = 1
                 break
 
-            if info["deadlock"]:
-                ep_info["deadlocks"] += 1
-                if self.opt.early_stop_deadlocks:
-                    break
-                if self.opt.go_back_after_deadlocks:
-                    # Go back directly to previous state
-                    self.env.state = state
+            # if info["deadlock"]:
+            #     ep_info["deadlocks"] += 1
+            #     if self.opt.early_stop_deadlocks:
+            #         break
+            #     if self.opt.go_back_after_deadlocks:
+            #         # Go back directly to previous state
+            #         self.env.state = state
         return ep_info
 
     def optimize_model(self):
