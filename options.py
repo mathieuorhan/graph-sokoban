@@ -8,7 +8,10 @@ def parse_options():
         "--logs", type=str, help="output dir to save the logs", default="./logs/",
     )
     parser.add_argument(
-        "--render", type=bool, help="save renderings of a same level", default=True,
+        "--render",
+        help="save renderings of a same level",
+        default=True,
+        action="store_true",
     )
     parser.add_argument(
         "--render_every",

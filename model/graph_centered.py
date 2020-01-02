@@ -26,8 +26,9 @@ class GraphCenteredNet(torch.nn.Module):
     ):
         super().__init__()
         assert hiddens % 4 == 0
-        self.aggr = "max"
+        self.aggr = aggr
         self.flow = flow
+        self.ratio = ratio
 
         # Build encoder
         self.conv_e, self.pool_e = self.build_block(
@@ -54,23 +55,29 @@ class GraphCenteredNet(torch.nn.Module):
             nn.Linear(hiddens, out_channels),
         )
         conv = EdgeConv(nn=mlp, aggr=self.aggr)
-        if ratio < 1.0:
+        if self.ratio < 1.0:
             pool = SAGPooling(out_channels, ratio=ratio)
         else:
             pool = None
         return conv, pool
 
     def forward(self, x, edge_index, edge_attr, u=None, batch=None):
+        if batch is None:
+            batch = torch.zeros(x.size(0), dtype=torch.long).cuda()
+
         # Encoder
         x = F.relu(self.conv_e(x, edge_index))
-        x, edge_index, _, batch, _, _ = self.pool_e(x, edge_index, None, batch)
+        if self.ratio < 1:
+            x, edge_index, _, batch, _, _ = self.pool_e(x, edge_index, None, batch)
 
         # Core
         x = F.relu(self.conv_c1(x, edge_index))
-        x, edge_index, _, batch, _, _ = self.pool_c1(x, edge_index, None, batch)
+        if self.ratio < 1:
+            x, edge_index, _, batch, _, _ = self.pool_c1(x, edge_index, None, batch)
 
         x = F.relu(self.conv_c2(x, edge_index))
-        x, edge_index, _, batch, _, _ = self.pool_c2(x, edge_index, None, batch)
+        if self.ratio < 1:
+            x, edge_index, _, batch, _, _ = self.pool_c2(x, edge_index, None, batch)
 
         # Global pooling
         z = global_max_pool(x, batch)
@@ -78,4 +85,3 @@ class GraphCenteredNet(torch.nn.Module):
         # (batch_size, 4)
         probs = self.decoder(z).view(-1, 4)
         return probs, edge_attr, u
-

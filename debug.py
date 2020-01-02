@@ -19,4 +19,3 @@ trainer = QLearningGraphCenteredTrainer(opt)
 for epoch in range(opt.epochs):
     trainer.train_one_epoch()
     trainer.eval_one_epoch()
-

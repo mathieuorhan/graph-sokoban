@@ -26,8 +26,12 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
         )
 
     def build_networks(self):
-        self.policy_net = GraphCenteredNet(self.embedding.NUM_NODES_FEATURES, None)
-        self.target_net = GraphCenteredNet(self.embedding.NUM_NODES_FEATURES, None)
+        self.policy_net = GraphCenteredNet(
+            self.embedding.NUM_NODES_FEATURES, None, ratio=1.0, hiddens=32, aggr="max"
+        )
+        self.target_net = GraphCenteredNet(
+            self.embedding.NUM_NODES_FEATURES, None, ratio=1.0, hiddens=32, aggr="max"
+        )
         self.policy_net.to(self.device)
         self.target_net.to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -80,17 +84,17 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
         # Compute a mask of non-final states and concatenate the batch elements
         # in a single graph using pytorch_geometric Batch class
         non_final_mask = torch.tensor(
-            tuple(map(lambda s: s is not None, batch.next_state)),
-            device=self.device,
-            dtype=torch.bool,
+            tuple(map(lambda s: s is not None, batch.next_state)), dtype=torch.bool,
         )
 
         if any(non_final_mask):
+            non_final_mask = non_final_mask.to(self.device)
             non_final_next_states = Batch.from_data_list(
                 [s for s in batch.next_state if s is not None]
-            )
+            ).to(self.device)
 
-        state_batch = Batch.from_data_list(batch.state)
+        state_batch = Batch.from_data_list(batch.state).to(self.device)
+
         # cuda, (batch_size, 1)
         action_batch = torch.stack(batch.action)
         reward_batch = torch.stack(batch.reward)
@@ -103,8 +107,9 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
             edge_index=state_batch.edge_index,
             edge_attr=state_batch.edge_attr,
             u=None,
-            batch=state_batch.batch.to(self.device),
+            batch=state_batch.batch,
         )
+
         # (batch_size, 1)
         state_action_values = scores.gather(1, action_batch)
 
@@ -121,9 +126,10 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
                     edge_index=non_final_next_states.edge_index,
                     edge_attr=non_final_next_states.edge_attr,
                     u=None,
-                    batch=non_final_next_states.batch.to(self.device),
+                    batch=non_final_next_states.batch,
                 )
                 next_state_values[non_final_mask] = target_scores.max(1)[0]
+
         # Compute the expected Q values
         expected_state_action_values = (
             next_state_values * self.opt.gamma
@@ -133,7 +139,7 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
         loss = F.smooth_l1_loss(
             state_action_values, expected_state_action_values.unsqueeze(1)
         )
-        print(loss, reward_batch.mean())
+        # print(loss.item(), reward_batch.mean().item())
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -173,4 +179,3 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
     def render_one_episode(self, episode_idx):
         # TODO
         return
-
