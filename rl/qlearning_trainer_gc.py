@@ -56,7 +56,6 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
                 next_state, reward, done, info = self.env.step(action_node)
 
             ep_info["cum_reward"] += reward
-            reward = torch.tensor(reward, device=self.device)
 
             # Observe new state
             if done:
@@ -97,7 +96,7 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
 
         # cuda, (batch_size, 1)
         action_batch = torch.stack(batch.action)
-        reward_batch = torch.stack(batch.reward)
+        reward_batch = torch.tensor(batch.reward, dtype=torch.float, device=self.device)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
