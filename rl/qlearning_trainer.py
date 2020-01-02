@@ -111,7 +111,6 @@ class QLearningTrainer(AbstractTrainer):
             )
             epoch_info["deadlocks"] += ep_info["deadlocks"]
             epoch_info["solved"] += ep_info["solved"]
-            self.scheduler.step()
             # Update the target network, copying all weights and biases in DQN
             if self.update_count % self.opt.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -151,6 +150,7 @@ class QLearningTrainer(AbstractTrainer):
 
             # Perform one step of the optimization (on the target network)
             self.optimize_model()
+            self.scheduler.step()
 
             if done:
                 ep_info["solved"] = 1

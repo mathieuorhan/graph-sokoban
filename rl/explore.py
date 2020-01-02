@@ -1,6 +1,34 @@
 import random
 import torch
 
+import data.utils as utils
+
+
+def epsilon_greedy_gc(state, policy_net, eps, device):
+    """Epsilon-greedy exploration
+    
+    Args:
+        - state: input Data graph (unbatched)
+        - net: policy net
+        - eps: epsilon
+    Return:
+        - (tensor, long, (1,)) direction corresponding to the action 
+    """
+    if random.random() > eps:
+        with torch.no_grad():
+            scores, _, _ = policy_net(
+                x=state.x,
+                edge_index=state.edge_index,
+                edge_attr=state.edge_attr,
+                u=None,
+                batch=None,
+            )
+            chosen_dir = torch.argmax(scores, dim=-1)
+    else:
+        # Sample randomly a direction TODO : only "valid" direction
+        chosen_dir = torch.randint(4, (1,), device=device)
+    return chosen_dir
+
 
 def best_from_nodes(scores, state):
     """Find the best node according to prediction among neighbors.
