@@ -11,7 +11,7 @@ from torch_geometric.data import Batch
 from data.constants import Transition
 from data.dataset import InMemorySokobanDataset
 import data.utils as utils
-from model.graph_centered import GraphCenteredNet
+from model.graph_centered import GraphCenteredNet, SimpleGraphCenteredNet
 from rl.abstract_trainer import AbstractTrainer
 from rl.explore import epsilon_greedy_gc
 from rl.schedulers import AnnealingScheduler

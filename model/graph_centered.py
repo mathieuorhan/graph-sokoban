@@ -1,8 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import TopKPooling, SAGPooling, EdgeConv
-from torch_geometric.nn import global_mean_pool, global_max_pool
+from torch_geometric.nn import (
+    TopKPooling,
+    SAGPooling,
+    EdgeConv,
+    global_mean_pool,
+    global_max_pool,
+    GCNConv,
+)
 
 
 class GraphCenteredNet(torch.nn.Module):
@@ -25,7 +31,7 @@ class GraphCenteredNet(torch.nn.Module):
         ratio=0.8,
     ):
         super().__init__()
-        assert hiddens % 4 == 0
+        assert hiddens % 4 == 0, "`hiddens` has to be a multiple of 4"
         self.aggr = aggr
         self.flow = flow
         self.ratio = ratio
@@ -78,6 +84,45 @@ class GraphCenteredNet(torch.nn.Module):
         x = F.relu(self.conv_c2(x, edge_index))
         if self.ratio < 1:
             x, edge_index, _, batch, _, _ = self.pool_c2(x, edge_index, None, batch)
+
+        # Global pooling
+        z = global_max_pool(x, batch)
+
+        # (batch_size, 4)
+        probs = self.decoder(z).view(-1, 4)
+        return probs, edge_attr, u
+
+
+class SimpleGraphCenteredNet(torch.nn.Module):
+    def __init__(
+        self,
+        n_node_features,
+        n_edge_features=None,
+        hiddens=32,
+        aggr="max",
+        depth=4,
+        **kwargs
+    ):
+        super(SimpleGraphCenteredNet, self).__init__()
+        assert hiddens % 4 == 0, "`hiddens` has to be a multiple of 4"
+        self.hiddens = hiddens
+        self.aggr = aggr
+        self.depth = depth
+
+        self.conv_i = GCNConv(n_node_features, hiddens)
+        self.convs_h = nn.Sequential(*[GCNConv(hiddens, hiddens) for _ in range(depth)])
+
+        self.decoder = nn.Sequential(
+            nn.Linear(hiddens, hiddens // 2), nn.ReLU(), nn.Linear(hiddens // 2, 4),
+        )
+
+    def forward(self, x, edge_index, edge_attr, u=None, batch=None):
+        if batch is None:
+            batch = torch.zeros(x.size(0), dtype=torch.long).cuda()
+
+        x = F.relu(self.conv_i(x, edge_index))
+        for conv in self.convs_h:
+            x = F.relu(conv(x, edge_index))
 
         # Global pooling
         z = global_max_pool(x, batch)
