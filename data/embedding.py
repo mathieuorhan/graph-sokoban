@@ -278,6 +278,14 @@ class DirectionalPositionalEmbedding(DirectionalEmbedding, PositionalEmbedding):
     pass
 
 
+class FullyConnectedPositionalEmbedding(DirectionalEmbedding, PositionalEmbedding):
+    """Embedding where every node is connected to all the other nodes."""
+
+    @classmethod
+    def linker(cls, state):
+        return cls.linker_fc(state)
+
+
 if __name__ == "__main__":
     import gym
     import gym_sokoban

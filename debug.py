@@ -6,10 +6,13 @@ import options
 import logger
 from model.graph_centered import GraphCenteredNet
 from rl.qlearning_trainer_gc import QLearningGraphCenteredTrainer
-from data.embedding import DirectionalPositionalEmbedding
+from data.embedding import (
+    DirectionalPositionalEmbedding,
+    FullyConnectedPositionalEmbedding,
+)
 
 opt = options.parse_options()
-opt.embedding = DirectionalPositionalEmbedding()
+opt.embedding = FullyConnectedPositionalEmbedding()
 opt.training_id = str(int(time.time()))
 
 # Setup logger
