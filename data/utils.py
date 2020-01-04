@@ -99,7 +99,7 @@ def count_boxes(state):
     return (state.x[:, 0] == 1).sum().item()
 
 
-def display_graph(state, q_values=None):
+def display_graph(state, q_values=None, node_size=3000):
     """display a graph state using networkx."""
     pos_map = {i: pos.numpy() for i, pos in enumerate(state.pos.cpu())}
 
@@ -131,7 +131,7 @@ def display_graph(state, q_values=None):
         to_networkx(state),
         node_color=colors,
         labels=labels,
-        node_size=3000,
+        node_size=node_size,
         linewidths=1,
         font_color="w",
         pos=pos_map,

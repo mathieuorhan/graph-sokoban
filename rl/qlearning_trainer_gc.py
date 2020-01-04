@@ -42,6 +42,7 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
         ep_info["cum_reward"] = 0.0
         ep_info["solved"] = 0
         ep_info["deadlocks"] = 0
+        ep_info["loss"] = 0.0
         # Initialize the environment and state
         self.env.reset(self.dataset_train[episode_idx])
 
@@ -65,8 +66,10 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
             self.memory.push(state, action, next_state, reward)
 
             # Perform one step of the optimization (on the target network)
-            self.optimize_model()
+            loss = self.optimize_model()
             self.scheduler.step()
+
+            ep_info["loss"] += loss
 
             if done:
                 ep_info["solved"] = 1
@@ -77,7 +80,7 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
     def optimize_model(self):
         # Sample a batch from buffer if available
         if len(self.memory) < self.opt.batch_size:
-            return
+            return 0.0
         batch = self.memory.sample(self.opt.batch_size)
 
         # Compute a mask of non-final states and concatenate the batch elements
@@ -149,6 +152,8 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
         self.optimizer.step()
 
         self.update_count += 1
+
+        return loss.item()
 
     def eval_one_episode(self, episode_idx):
         with torch.no_grad():
