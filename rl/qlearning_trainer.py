@@ -323,6 +323,7 @@ class QLearningTrainer(AbstractTrainer):
                 next_state, reward, done, info = self.env.step(action_node)
 
                 # Save the state display
+                plt.figure()
                 display_graph(state, scores)
                 os.makedirs(
                     "./logs/{}/rendering".format(self.opt.training_id), exist_ok=True
