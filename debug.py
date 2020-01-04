@@ -12,7 +12,7 @@ from data.embedding import (
 )
 
 opt = options.parse_options()
-opt.embedding = FullyConnectedPositionalEmbedding()
+opt.embedding = DirectionalPositionalEmbedding()
 opt.training_id = str(int(time.time()))
 
 # Setup logger

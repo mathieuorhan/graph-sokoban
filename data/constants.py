@@ -29,6 +29,29 @@ class SokobanElements:
     BOX_TARGET = "."
 
 
+# For displays
+MEANING_TO_STATE = {
+    "": torch.tensor([0.0, 0.0, 0.0, 0.0]),
+    "B": torch.tensor([1.0, 0.0, 0.0, 0.0]),
+    "P": torch.tensor([0.0, 1.0, 0.0, 0.0]),
+    "T": torch.tensor([0.0, 0.0, 1.0, 0.0]),
+    "W": torch.tensor([0.0, 0.0, 0.0, 1.0]),
+    "BT": torch.tensor([1.0, 0.0, 1.0, 0.0]),
+    "PT": torch.tensor([0.0, 1.0, 1.0, 0.0]),
+}
+
+
+MEANING_TO_COLOR = {
+    "": (0.5, 0.5, 0.5),
+    "B": (0.6, 0.5, 0.2),
+    "P": (0.7, 0.8, 0.2),
+    "T": (0.99, 0.5, 0.5),
+    "W": (0, 0, 0),
+    "BT": (0.99, 0.3, 0.3),
+    "PT": (0.9, 0.8, 0.2),
+}
+
+
 ASCII_TO_PIXELS = dict(
     [
         (getattr(SokobanElements, name), getattr(TinyWorldElements, name))
