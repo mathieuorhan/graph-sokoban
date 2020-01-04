@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 
-from data.replay import ReplayMemory, RewardReplayMemory
+from data.replay import ReplayMemory, RewardReplayMemory, ThresholdReplayMemory
 
 
 class AbstractTrainer:
@@ -67,7 +67,7 @@ class AbstractTrainer:
         print(line)
 
     def build_memory(self):
-        self.memory = RewardReplayMemory(self.opt.buffer_size)
+        self.memory = ThresholdReplayMemory(self.opt.buffer_size)
 
     def build_env(self):
         raise NotImplementedError

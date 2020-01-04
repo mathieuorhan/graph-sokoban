@@ -69,3 +69,52 @@ class RewardReplayMemory:
 
     def __len__(self):
         return len(self.memory)
+
+
+class ThresholdReplayMemory:
+    """Replay memory where transitions whose reward is higher than a threshold are sampled a factor times more often."""
+
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.memory = []
+        self.position = 0
+        self.threshold = 0.0
+        self.factor = 10.0
+        self.n = 0
+        self.p = []
+
+    def push(self, state, action, next_state, reward):
+        """Saves a transition."""
+
+        if len(self.memory) < self.capacity:
+            self.memory.append(Transition(state, action, next_state, reward))
+            if reward > self.threshold:
+                self.n += 1
+                self.p.append(self.factor)
+            else:
+                self.p.append(1.0)
+
+        else:
+            self.memory[self.position] = Transition(state, action, next_state, reward)
+            if self.p[self.position] == self.factor:
+                self.n -= 1
+            if reward > self.threshold:
+                self.n += 1
+                self.p[self.position] = self.factor
+            else:
+                self.p[self.position] = 1.0
+
+        self.position = (self.position + 1) % self.capacity
+
+    def sample(self, batch_size):
+        """Return a Transition with batched values."""
+        transitions_idx = np.random.choice(
+            len(self),
+            size=batch_size,
+            p=[p / (self.n * (self.factor - 1) + len(self)) for p in self.p],
+        )
+        transitions = [self.memory[i] for i in transitions_idx]
+        return Transition(*zip(*transitions))
+
+    def __len__(self):
+        return len(self.memory)
