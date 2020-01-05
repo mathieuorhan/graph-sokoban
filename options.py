@@ -4,21 +4,11 @@ from easydict import EasyDict
 
 def parse_options():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--logs", type=str, help="output dir to save the logs", default="./logs/",
-    )
-    parser.add_argument(
-        "--render",
-        help="save renderings of a same level",
-        default=True,
-        action="store_true",
-    )
-    parser.add_argument(
-        "--render_every",
-        type=int,
-        help="number of iterations to wait for saving the rendering",
-        default=25,
-    )
+    parser.add_argument("--logs", type=str, default="./logs/")
+    parser.add_argument("--render", default=True, action="store_true")
+    parser.add_argument("--render_every", type=int, default=25)
+    parser.add_argument("--save_every", type=int, default=10)
+
     # Data paths
     parser.add_argument("--train_path", type=str, default="levels/dummy_small_100")
     parser.add_argument("--test_path", type=str, default="levels/dummy_small_100")
