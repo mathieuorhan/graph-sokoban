@@ -25,8 +25,11 @@ def epsilon_greedy_gc(state, policy_net, eps, device):
             )
             chosen_dir = torch.argmax(scores, dim=-1)
     else:
-        # Sample randomly a direction TODO : only "valid" direction
-        chosen_dir = torch.randint(4, (1,), device=device)
+        nb_edge_idxs = (state.edge_index[0, :] == state.player_idx).nonzero().squeeze()
+        sensible_moves = state.edge_attr[nb_edge_idxs].nonzero()[:, 0].squeeze()
+        move_idx = torch.randint(sensible_moves.size(0), (1,), device=device)
+        chosen_dir = sensible_moves[move_idx]
+        # chosen_dir = torch.randint(4, (1,), device=device)  # All moves
     return chosen_dir
 
 
