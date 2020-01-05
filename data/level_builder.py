@@ -1,6 +1,14 @@
 import argparse
+import os
+import sys
+
+if __name__ == "__main__":
+    sys.path.insert(0, os.getcwd())
+
+import matplotlib.pyplot as plt
 from tkinter import Canvas, Tk, Button
-from constants import SokobanElements
+from data.constants import SokobanElements
+from data.utils import ascii_to_img
 
 
 LEVEL_CHARS = {
@@ -8,11 +16,11 @@ LEVEL_CHARS = {
     1: SokobanElements.WALL,
     2: SokobanElements.BOX,
     3: SokobanElements.PLAYER,
-    4: SokobanElements.BOX_TARGET
+    4: SokobanElements.BOX_TARGET,
 }
 
 
-class Cell():
+class Cell:
     N_STATES = 5
     BORDER_COLOR = "black"
     WALL_COLOR = "black"
@@ -25,7 +33,7 @@ class Cell():
         1: WALL_COLOR,
         2: BOX_COLOR,
         3: PLAYER_COLOR,
-        4: TARGET_COLOR
+        4: TARGET_COLOR,
     }
 
     def __init__(self, master, x, y, size):
@@ -47,18 +55,19 @@ class Cell():
             ymax = ymin + self.size
 
             self.master.create_rectangle(
-                xmin, ymin, xmax, ymax, 
-                fill=state_color, outline=Cell.BORDER_COLOR
+                xmin, ymin, xmax, ymax, fill=state_color, outline=Cell.BORDER_COLOR
             )
 
 
 class CellGrid(Canvas):
     def __init__(self, master, n_row, n_col, cell_size, path, *args, **kwargs):
         Canvas.__init__(
-            self, master, 
+            self,
+            master,
             width=cell_size * n_col,
             height=cell_size * n_row,
-            *args, **kwargs
+            *args,
+            **kwargs
         )
         self.path = path  # Path to save the level
         self.cell_size = cell_size
@@ -68,9 +77,7 @@ class CellGrid(Canvas):
             line = []
 
             for col in range(n_col):
-                line.append(
-                    Cell(self, col, row, cell_size)
-                )
+                line.append(Cell(self, col, row, cell_size))
 
             self.grid.append(line)
 
@@ -78,7 +85,7 @@ class CellGrid(Canvas):
         self.switched = []
 
         # bind click action
-        self.bind("<Button-1>", self.handleMouseClick) 
+        self.bind("<Button-1>", self.handleMouseClick)
 
         # bind moving while clicking
         self.bind("<B1-Motion>", self.handleMouseMotion)
@@ -92,7 +99,7 @@ class CellGrid(Canvas):
         for row in self.grid:
             for cell in row:
                 cell.draw()
-        
+
     def _event_coords(self, event):
         row = int(event.y / self.cell_size)
         col = int(event.x / self.cell_size)
@@ -117,13 +124,16 @@ class CellGrid(Canvas):
             self.switched.append(cell)
 
     def save(self):
-        """Save the built level in an ASCII string."""
-        with open(self.path, 'w') as f:
+        """Save the built level in an ASCII string and as an png image"""
+        with open(self.path, "w") as f:
             for line in self.grid:
                 for cell in line:
                     f.write(LEVEL_CHARS[cell.state])
                 f.write("\n")
-                    
+        img_fname = self.path[:-3] + "png"
+        img = ascii_to_img(self.path)
+        plt.imsave(img_fname, img)
+
 
 def build_level(path, width, height, size):
     """Launch the tkinter level builder and save it."""
@@ -140,18 +150,24 @@ def build_level(path, width, height, size):
     app.mainloop()
 
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("filename", type=str, help="name of the level")
-    parser.add_argument("-d", "--dir", type=str, help="output dir to save the level", default="./levels/")
+    parser.add_argument(
+        "-d",
+        "--dir",
+        type=str,
+        help="output dir to save the level",
+        default="./levels/",
+    )
     parser.add_argument("-w", "--width", type=int, default=7, help="number of columns")
     parser.add_argument("-r", "--height", type=int, default=7, help="number of rows")
     parser.add_argument("-s", "--size", type=int, default=50, help="cell size")
 
     args = parser.parse_args()
 
-    path = args.dir + args.filename
+    path = os.path.join(args.dir, args.filename)
     width, height, size = args.width, args.height, args.size
 
     # Launch the level builder

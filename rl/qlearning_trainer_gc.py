@@ -183,3 +183,8 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
     def render_one_episode(self, episode_idx):
         # TODO
         return
+
+    def save_model(self, filename="weigths.pth"):
+        """Save weights in log folder."""
+        path = os.path.join(os.path.join(self.opt.logs, self.opt.training_id, filename))
+        torch.save(self.policy_net.state_dict(), path)

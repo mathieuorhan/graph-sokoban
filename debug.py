@@ -35,6 +35,9 @@ for epoch in range(opt.epochs):
     # Evaluation
     trainer.eval_one_epoch()
 
+    # Save weights
+    trainer.save_model()
+
 # Saving history in the logs
 with open(os.path.join(opt.logs, opt.training_id, "history.pkl"), "wb") as f:
     pickle.dump(history, f, pickle.HIGHEST_PROTOCOL)
