@@ -42,10 +42,19 @@ for epoch in range(opt.epochs):
     if opt.render and epoch % opt.render_every == 0:
         trainer.render_one_episode(0)
 
-    # Save weights
-    trainer.save_model()
+    # Save weights and history
+    if epoch % opt.save_every == 0:
+        trainer.save_model()
+        with open(
+            os.path.join(opt.logs, opt.training_id, "train_history.pkl"), "wb"
+        ) as f:
+            pickle.dump(history_train, f, pickle.HIGHEST_PROTOCOL)
+        with open(
+            os.path.join(opt.logs, opt.training_id, "eval_history.pkl"), "wb"
+        ) as f:
+            pickle.dump(history_eval, f, pickle.HIGHEST_PROTOCOL)
 
-# Saving history in the logs
+trainer.save_model()
 with open(os.path.join(opt.logs, opt.training_id, "train_history.pkl"), "wb") as f:
     pickle.dump(history_train, f, pickle.HIGHEST_PROTOCOL)
 
