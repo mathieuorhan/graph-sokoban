@@ -136,3 +136,20 @@ def display_graph(state, q_values=None, node_size=3000):
         font_color="w",
         pos=pos_map,
     )
+
+
+def plot_history(history, figsize=(10, 10)):
+    plt.style.use("ggplot")
+
+    fig, axes = plt.subplots(4, 1, figsize=(10, 10))
+    axes[0].plot(history["mean_cum_reward"], lw=2)
+    axes[0].set_ylabel("mean cum reward")
+    axes[1].plot(history["mean_loss"], lw=2)
+    axes[1].set_ylabel("mean loss")
+    axes[2].fill_between(range(len(history["solved"])), history["solved"])
+    axes[2].set_ylabel("level solved")
+    axes[3].plot(history["epsilon"], lw=2)
+    axes[3].set_ylabel("epsilon")
+    plt.xlabel("epochs")
+
+    plt.show()
