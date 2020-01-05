@@ -25,13 +25,15 @@ class GraphCenteredNet(torch.nn.Module):
         self,
         n_node_features,
         n_edge_features=None,
-        hiddens=128,
+        hiddens=32,
         aggr="max",
         flow="source_to_target",
-        ratio=0.8,
+        ratio=1.0,
+        device="cuda",
     ):
         super().__init__()
         assert hiddens % 4 == 0, "`hiddens` has to be a multiple of 4"
+        self.device = device
         self.aggr = aggr
         self.flow = flow
         self.ratio = ratio
@@ -69,7 +71,7 @@ class GraphCenteredNet(torch.nn.Module):
 
     def forward(self, x, edge_index, edge_attr, u=None, batch=None):
         if batch is None:
-            batch = torch.zeros(x.size(0), dtype=torch.long).cuda()
+            batch = torch.zeros(x.size(0), dtype=torch.long).to(self.device)
 
         # Encoder
         x = F.relu(self.conv_e(x, edge_index))
@@ -118,7 +120,7 @@ class SimpleGraphCenteredNet(torch.nn.Module):
 
     def forward(self, x, edge_index, edge_attr, u=None, batch=None):
         if batch is None:
-            batch = torch.zeros(x.size(0), dtype=torch.long).cuda()
+            batch = torch.zeros(x.size(0), dtype=torch.long).to(self.device)
 
         x = F.relu(self.conv_i(x, edge_index))
         for conv in self.convs_h:

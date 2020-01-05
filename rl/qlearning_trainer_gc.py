@@ -27,10 +27,20 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
 
     def build_networks(self):
         self.policy_net = GraphCenteredNet(
-            self.embedding.NUM_NODES_FEATURES, None, ratio=1.0, hiddens=32, aggr="max"
+            self.embedding.NUM_NODES_FEATURES,
+            None,
+            ratio=1.0,
+            hiddens=32,
+            aggr="max",
+            device=self.device,
         )
         self.target_net = GraphCenteredNet(
-            self.embedding.NUM_NODES_FEATURES, None, ratio=1.0, hiddens=32, aggr="max"
+            self.embedding.NUM_NODES_FEATURES,
+            None,
+            ratio=1.0,
+            hiddens=32,
+            aggr="max",
+            device=self.device,
         )
         self.policy_net.to(self.device)
         self.target_net.to(self.device)
@@ -52,7 +62,11 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
             # Select and perform an action
             with torch.no_grad():
                 action = epsilon_greedy_gc(
-                    state, self.policy_net, self.scheduler.epsilon, device=self.device
+                    state,
+                    self.policy_net,
+                    self.scheduler.epsilon,
+                    device=self.device,
+                    opt=self.opt,
                 )
                 action_node = utils.direction_to_node_idx(state, action)
                 next_state, reward, done, info = self.env.step(action_node)
@@ -168,7 +182,7 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
                 state = self.env.render()
                 # Select and perform an action
                 action = epsilon_greedy_gc(
-                    state, self.policy_net, 0, device=self.device
+                    state, self.policy_net, 0, device=self.device, opt=self.opt
                 )
                 action_node = utils.direction_to_node_idx(state, action)
                 next_state, reward, done, info = self.env.step(action_node)

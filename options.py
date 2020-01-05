@@ -1,4 +1,6 @@
+import time
 import argparse
+
 from easydict import EasyDict
 
 
@@ -19,6 +21,7 @@ def parse_options():
         help="number of iterations to wait for saving the rendering",
         default=25,
     )
+    parser.add_argument("--training_id", type=str, default=str(int(time.time())))
     # Data paths
     parser.add_argument("--train_path", type=str, default="levels/dummy_small_100")
     parser.add_argument("--test_path", type=str, default="levels/dummy_small_100")
@@ -37,12 +40,22 @@ def parse_options():
     parser.add_argument("--seed", type=int, default=123)
     parser.add_argument("--walls_prob", type=float, default=0)
     parser.add_argument("--static_prob", type=float, default=0)
+    parser.add_argument("--gpu", type=int, default=0)
+    parser.add_argument("--cpu", default=False, action="store_true")
 
     # Opt
     parser.add_argument("--lr", type=float, default=0.0005)
     parser.add_argument("--rms_alpha", type=float, default=0.95)
     parser.add_argument("--rms_eps", type=float, default=0.01)
     parser.add_argument("--no_clamp_gradient", default=False, action="store_true")
+
+    # Should improve performances, but degrades performances in experiments
+    parser.add_argument(
+        "--no_sensible_moves_gc",
+        dest="sensible_moves_gc",
+        default=True,
+        action="store_false",
+    )
 
     # Deadlocks # BUG with deadlocks : disabled !
     parser.add_argument("--early_stop_deadlocks", default=False, action="store_true")

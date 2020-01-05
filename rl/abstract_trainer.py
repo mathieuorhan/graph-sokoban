@@ -1,5 +1,6 @@
 import random
 import logging
+import os
 
 from termcolor import colored
 
@@ -96,7 +97,12 @@ class AbstractTrainer:
         torch.manual_seed(self.opt.seed)
 
     def get_device(self):
-        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if self.opt.cpu:
+            device = torch.device("cpu")
+        else:
+            assert torch.cuda.is_available()
+            device = torch.device(self.opt.gpu)
+        return device
 
     def save_model(self, filename="weigths.pth"):
         """Save weights in log folder."""
