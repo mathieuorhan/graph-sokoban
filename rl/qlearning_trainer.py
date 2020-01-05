@@ -83,6 +83,7 @@ class QLearningTrainer(AbstractTrainer):
         )
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
+        self.info["model"] = self.policy_net
 
     def train_one_epoch(self):
         self.framed_log(f"EPOCH {self.epoch}")

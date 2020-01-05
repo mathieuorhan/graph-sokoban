@@ -36,6 +36,7 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
         self.target_net.to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
+        self.info["model"] = self.policy_net
 
     def train_one_episode(self, episode_idx):
         ep_info = {}
