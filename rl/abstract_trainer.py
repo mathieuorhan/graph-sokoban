@@ -68,6 +68,7 @@ class AbstractTrainer:
 
     def build_memory(self):
         self.memory = ThresholdReplayMemory(self.opt.buffer_size)
+        self.info["memory"] = self.memory
 
     def build_env(self):
         raise NotImplementedError

@@ -33,6 +33,7 @@ class QLearningTrainer(AbstractTrainer):
 
     def build_env(self):
         self.env = GraphEnv(embedding=self.embedding, device=self.device)
+        self.info["env"] = self.env
 
     def build_datasets(self):
         self.dataset_train = InMemorySokobanDataset(
