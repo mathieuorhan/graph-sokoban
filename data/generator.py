@@ -34,7 +34,7 @@ def generate_dummy(width, height, n_box, n_levels, savedir, save_as_image):
                 crit = lines[y][x] != se.FLOOR
                 nb_random_try += 1
             lines[y][x] = se.BOX
-            
+
             # Place the targets
             crit = True
             while crit and nb_random_try < max_random_try:
@@ -51,6 +51,7 @@ def generate_dummy(width, height, n_box, n_levels, savedir, save_as_image):
             nb_random_try += 1
         lines[y][x] = se.PLAYER
         # Save the level as txt
+        os.makedirs(savedir, exist_ok=True)
         txt_fname = os.path.join(
             savedir, "dummy_{}x{}_{}box_{}.txt".format(width, height, n_box, lvl)
         )
