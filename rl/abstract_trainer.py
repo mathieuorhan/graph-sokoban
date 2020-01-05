@@ -97,3 +97,8 @@ class AbstractTrainer:
 
     def get_device(self):
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def save_model(self, filename="weigths.pth"):
+        """Save weights in log folder."""
+        path = os.path.join(os.path.join(self.opt.logs, self.opt.training_id, filename))
+        torch.save(self.policy_net.state_dict(), path)

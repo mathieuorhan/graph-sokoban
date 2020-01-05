@@ -16,21 +16,29 @@ opt.training_id = str(int(time.time()))
 
 # Setup logger
 logger.setup_logger(opt.logs, training_id=opt.training_id)
-history = dict()
+history_train = dict()
+history_eval = dict()
 trainer = QLearningGraphCenteredTrainer(opt)
-history = dict()
 
 # Training loop
 for epoch in range(opt.epochs):
-    epoch_info = trainer.train_one_epoch()
+    # Train
+    train_epoch_info = trainer.train_one_epoch()
     # monitor the information about training
-    for info in epoch_info:
-        if info not in history:
-            history[info] = [epoch_info[info]]
+    for info in train_epoch_info:
+        if info not in history_train:
+            history_train[info] = [train_epoch_info[info]]
         else:
-            history[info].append(epoch_info[info])
+            history_train[info].append(train_epoch_info[info])
 
-    trainer.eval_one_epoch()
+    # Evaluate
+    eval_epoch_info = trainer.eval_one_epoch()
+    # monitor the information about training
+    for info in eval_epoch_info:
+        if info not in history_eval:
+            history_eval[info] = [eval_epoch_info[info]]
+        else:
+            history_eval[info].append(eval_epoch_info[info])
 
     if opt.render and epoch % opt.render_every == 0:
         trainer.render_one_episode(0)
@@ -39,5 +47,8 @@ for epoch in range(opt.epochs):
     trainer.save_model()
 
 # Saving history in the logs
-with open(os.path.join(opt.logs, opt.training_id, "history.pkl"), "wb") as f:
-    pickle.dump(history, f, pickle.HIGHEST_PROTOCOL)
+with open(os.path.join(opt.logs, opt.training_id, "train_history.pkl"), "wb") as f:
+    pickle.dump(history_train, f, pickle.HIGHEST_PROTOCOL)
+
+with open(os.path.join(opt.logs, opt.training_id, "eval_history.pkl"), "wb") as f:
+    pickle.dump(history_eval, f, pickle.HIGHEST_PROTOCOL)
