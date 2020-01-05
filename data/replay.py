@@ -1,5 +1,9 @@
 from .constants import Transition
 import random
+import heapq
+import numpy as np
+from data.data_structure import MinSegmentTree, SegmentTree, SumSegmentTree
+import torch
 
 
 class ReplayMemory:
@@ -22,3 +26,23 @@ class ReplayMemory:
 
     def __len__(self):
         return len(self.memory)
+
+
+class GreedyPrioritizedExperienceReplay(ReplayMemory):
+    """Greedy Prioritized replay memory using binary heap."""
+
+    def __init__(self, capacity):
+        super().__init__(capacity)
+
+    def push(self, transition, TDerror):
+        heapq.heappush(self.memory, (-TDerror, transition))
+        if len(self.memory) < self.capacity:
+            self.memory = self.memory[:-1]
+        heapq.heapify(self.memory)
+
+    def sample(self, batch_size):
+        transitions = heapq.nsmallest(batch_size, self.memory)
+        transitions = [t for (_, t) in transitions]
+        self.memory = self.memory[batch_size:]
+        return Transition(*zip(*transitions))
+

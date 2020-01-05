@@ -14,11 +14,11 @@ from data.embedding import (
 
 opt = options.parse_options()
 opt.embedding = PositionalEmbedding()
-opt.unet_hidden_channels = 64
-opt.unet_depth = 3
-opt.unet_pool_ratios = 0.5
-opt.unet_sum_res = False
-opt.unet_act = F.relu
+# opt.unet_hidden_channels = 256
+# opt.unet_depth = 10
+# opt.unet_pool_ratios = 0.5
+# opt.unet_sum_res = False
+# opt.unet_act = F.relu
 opt.training_id = str(int(time.time()))
 
 # Setup logger
