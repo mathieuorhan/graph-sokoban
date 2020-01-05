@@ -7,7 +7,7 @@ import torch
 from torch_geometric.data import Data
 from torch_geometric.utils.convert import to_networkx
 
-from data.constants import ASCII_TO_PIXELS
+from data.constants import ASCII_TO_PIXELS, MEANING_TO_COLOR, MEANING_TO_STATE
 
 
 def ascii_to_img(filepath):
@@ -99,7 +99,7 @@ def count_boxes(state):
     return (state.x[:, 0] == 1).sum().item()
 
 
-def display_graph(state, q_values):
+def display_graph(state, q_values=None, node_size=3000):
     """display a graph state using networkx."""
     pos_map = {i: pos.numpy() for i, pos in enumerate(state.pos.cpu())}
 
@@ -110,27 +110,46 @@ def display_graph(state, q_values):
 
     # node color
     features = state.x.cpu()[:, :4]
-    colors = torch.zeros(features.size(0))
-    colors[torch.all(features == torch.tensor([1.0, 0.0, 0.0, 0.0]), -1)] = 1
-    colors[torch.all(features == torch.tensor([0.0, 1.0, 0.0, 0.0]), -1)] = 2
-    colors[torch.all(features == torch.tensor([0.0, 0.0, 1.0, 0.0]), -1)] = 3
-    colors[torch.all(features == torch.tensor([0.0, 0.0, 0.0, 1.0]), -1)] = 4
-    colors[torch.all(features == torch.tensor([1.0, 0.0, 1.0, 0.0]), -1)] = 5
-    colors[torch.all(features == torch.tensor([0.0, 1.0, 1.0, 0.0]), -1)] = 6
+    colors = np.empty((features.size(0), 3))
+    types = np.empty(features.size(0), dtype=str)
+
+    for i, m in enumerate(MEANING_TO_COLOR.keys()):
+        temp = torch.all(features == MEANING_TO_STATE[m], -1).numpy()
+        colors[temp] = MEANING_TO_COLOR[m]
+        types[temp] = m
 
     # display q values on each node
-    q_values_text = {
-        i: f"[{i}]\n{value.item():.5f}" for i, value in enumerate(q_values)
-    }
+    if q_values is not None:
+        labels = {
+            i: f"{types[i]} [{i}] \n{value.item():.5f}"
+            for i, value in enumerate(q_values)
+        }
+    else:
+        labels = {i: "{} [{}] ".format(types[i], i) for i in range(len(state.x))}
 
-    plt.figure()
     nx.draw(
         to_networkx(state),
-        cmap=plt.get_cmap("tab10"),
-        node_color=colors.numpy(),
-        labels=q_values_text,
-        node_size=4000,
+        node_color=colors,
+        labels=labels,
+        node_size=node_size,
         linewidths=1,
         font_color="w",
         pos=pos_map,
     )
+
+
+def plot_history(history, figsize=(10, 10)):
+    plt.style.use("ggplot")
+
+    fig, axes = plt.subplots(4, 1, figsize=(10, 10))
+    axes[0].plot(history["mean_cum_reward"], lw=2)
+    axes[0].set_ylabel("mean cum reward")
+    axes[1].plot(history["mean_loss"], lw=2)
+    axes[1].set_ylabel("mean loss")
+    axes[2].fill_between(range(len(history["solved"])), history["solved"])
+    axes[2].set_ylabel("level solved")
+    axes[3].plot(history["epsilon"], lw=2)
+    axes[3].set_ylabel("epsilon")
+    plt.xlabel("epochs")
+
+    plt.show()

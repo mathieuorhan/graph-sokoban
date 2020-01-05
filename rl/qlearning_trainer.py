@@ -90,12 +90,13 @@ class QLearningTrainer(AbstractTrainer):
 
         # Init counters
         epoch_info = {}
-        epoch_info["mean_cum_reward"] = 0
+        epoch_info["mean_cum_reward"] = 0.0
         epoch_info["solved"] = 0
         epoch_info["deadlocks"] = 0
         epoch_info["dataset size"] = len(self.dataset_train)
         epoch_info["epsilon"] = self.scheduler.epsilon
         epoch_info["time elapsed"] = time.time()
+        epoch_info["mean_loss"] = 0.0
 
         # Sample the episodes
         ep_indexes = list(range(len(self.dataset_train)))
@@ -111,10 +112,12 @@ class QLearningTrainer(AbstractTrainer):
             )
             epoch_info["deadlocks"] += ep_info["deadlocks"]
             epoch_info["solved"] += ep_info["solved"]
+            epoch_info["mean_loss"] += ep_info["loss"]
             # Update the target network, copying all weights and biases in DQN
             if self.update_count % self.opt.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
+        epoch_info["mean_loss"] /= len(self.dataset_train)
         epoch_info["time elapsed"] = time.time() - epoch_info["time elapsed"]
         self.log_one_train_epoch(epoch_info)
         self.epoch += 1
@@ -125,6 +128,7 @@ class QLearningTrainer(AbstractTrainer):
         ep_info["cum_reward"] = 0.0
         ep_info["solved"] = 0
         ep_info["deadlocks"] = 0
+        ep_info["loss"] = 0.0
         # Initialize the environment and state
         self.env.reset(self.dataset_train[episode_idx])
 
@@ -149,8 +153,10 @@ class QLearningTrainer(AbstractTrainer):
             self.memory.push(state, action_node, next_state, reward)
 
             # Perform one step of the optimization (on the target network)
-            self.optimize_model()
+            loss = self.optimize_model()
             self.scheduler.step()
+
+            ep_info["loss"] += loss
 
             if done:
                 ep_info["solved"] = 1
@@ -168,7 +174,7 @@ class QLearningTrainer(AbstractTrainer):
     def optimize_model(self):
         # Sample a batch from buffer if available
         if len(self.memory) < self.opt.batch_size:
-            return
+            return 0.0
         batch = self.memory.sample(self.opt.batch_size)
 
         # Compute a mask of non-final states and concatenate the batch elements
@@ -249,6 +255,8 @@ class QLearningTrainer(AbstractTrainer):
 
         self.update_count += 1
 
+        return loss.item()
+
     def eval_one_epoch(self):
         self.policy_net.eval()
 
@@ -323,6 +331,7 @@ class QLearningTrainer(AbstractTrainer):
                 next_state, reward, done, info = self.env.step(action_node)
 
                 # Save the state display
+                plt.figure()
                 display_graph(state, scores)
                 os.makedirs(
                     "./logs/{}/rendering".format(self.opt.training_id), exist_ok=True

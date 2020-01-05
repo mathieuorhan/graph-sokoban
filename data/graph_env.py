@@ -12,9 +12,9 @@ class GraphEnv:
     """
 
     STEP_REWARD = -0.1
-    ON_BOX_REWARD = 1
-    OFF_BOX_REWARD = -1
-    FINISH_REWARD = 10
+    ON_BOX_REWARD = 1.0
+    OFF_BOX_REWARD = -1.0
+    FINISH_REWARD = 10.0
 
     def __init__(self, embedding, device, stop_if_unreachable=True):
         self.state = None
@@ -113,4 +113,3 @@ class GraphEnv:
 
     def render(self):
         return self.state
-

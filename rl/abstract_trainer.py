@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 
-from data.replay import ReplayMemory
+from data.replay import ReplayMemory, RewardReplayMemory, ThresholdReplayMemory
 
 
 class AbstractTrainer:
@@ -67,7 +67,7 @@ class AbstractTrainer:
         print(line)
 
     def build_memory(self):
-        self.memory = ReplayMemory(self.opt.buffer_size)
+        self.memory = ThresholdReplayMemory(self.opt.buffer_size)
 
     def build_env(self):
         raise NotImplementedError
@@ -96,4 +96,3 @@ class AbstractTrainer:
 
     def get_device(self):
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
