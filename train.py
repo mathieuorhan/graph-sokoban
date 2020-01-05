@@ -18,7 +18,6 @@ opt.training_id = str(int(time.time()))
 logger.setup_logger(opt.logs, training_id=opt.training_id)
 history = dict()
 trainer = QLearningGraphCenteredTrainer(opt)
-history = dict()
 
 # Training loop
 for epoch in range(opt.epochs):
