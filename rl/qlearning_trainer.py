@@ -75,7 +75,7 @@ class QLearningTrainer(AbstractTrainer):
         # )
         n_nodes_features = self.embedding.NUM_NODES_FEATURES
         n_edges_features = self.embedding.NUM_EDGES_FEATURES
-        hiddens = 64
+        hiddens = self.opt.hiddens
         self.policy_net = MetaGNN(n_nodes_features, n_edges_features, hiddens).to(
             self.device
         )
