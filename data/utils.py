@@ -138,18 +138,39 @@ def display_graph(state, q_values=None, node_size=3000):
     )
 
 
-def plot_history(history, figsize=(10, 10)):
+def plot_history(history, history_eval=None, figsize=(10, 10)):
     plt.style.use("ggplot")
 
     fig, axes = plt.subplots(4, 1, figsize=(10, 10))
-    axes[0].plot(history["mean_cum_reward"], lw=2)
+    # Mean cumulative reward
+    axes[0].plot(history["mean_cum_reward"], lw=2, label="train")
     axes[0].set_ylabel("mean cum reward")
-    axes[1].plot(history["mean_loss"], lw=2)
+
+    # Mean loss
+    axes[1].plot(history["mean_loss"], lw=2, label="train")
     axes[1].set_ylabel("mean loss")
-    axes[2].fill_between(range(len(history["solved"])), history["solved"])
-    axes[2].set_ylabel("level solved")
-    axes[3].plot(history["epsilon"], lw=2)
+
+    # Number of level solved (%)
+    n_train = history["dataset size"][0]
+    train_solved_norm = [100 * s / n_train for s in history["solved"]]
+    axes[2].plot(train_solved_norm, lw=2, label="train")
+    axes[2].set_ylabel("level solved (%)")
+
+    # Epsilon
+    axes[3].plot(history["epsilon"], lw=2, label="train")
     axes[3].set_ylabel("epsilon")
+
+    if history_eval is not None:
+        # Mean cumulative reward
+        axes[0].plot(history_eval["mean_cum_reward"], lw=2, label="eval")
+        axes[0].legend()
+
+        # Number of level solved (%)
+        n_eval = history_eval["dataset size"][0]
+        eval_solved_norm = [100 * s / n_eval for s in history_eval["solved"]]
+        axes[2].plot(eval_solved_norm, lw=2, label="eval")
+        axes[2].legend()
+
     plt.xlabel("epochs")
 
     plt.show()
