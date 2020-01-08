@@ -36,6 +36,8 @@ def parse_options():
     parser.add_argument("--hiddens", type=int, default=32)
 
     # Opt
+    parser.add_argument("--hiddens", type=int, default=64)
+    parser.add_argument("--num_message_passing", type=int, default=2)
     parser.add_argument("--lr", type=float, default=0.0005)
     parser.add_argument("--rms_alpha", type=float, default=0.95)
     parser.add_argument("--rms_eps", type=float, default=0.01)

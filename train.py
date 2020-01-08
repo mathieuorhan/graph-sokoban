@@ -5,12 +5,12 @@ import os
 
 import options
 import logger
-from model.graph_centered import GraphCenteredNet
 from rl.qlearning_trainer_gc import (
     QLearningGraphCenteredTrainer,
     QLearningPrioritizedBufferGraphCenteredTrainer,
 )
-from data.embedding import DirectionalPositionalEmbedding
+from model.graph_centered import GraphCenteredNet, GraphCenteredNetV2
+from data.embedding import DirectionalPositionalEmbedding, DirectionalEmbedding
 
 
 opt = options.parse_options()
@@ -44,9 +44,6 @@ for epoch in range(opt.epochs):
             history_eval[info] = [eval_epoch_info[info]]
         else:
             history_eval[info].append(eval_epoch_info[info])
-
-    if opt.render and epoch % opt.render_every == 0:
-        trainer.render_one_episode(0)
 
     # Save weights and history
     if epoch % opt.save_every == 0:
