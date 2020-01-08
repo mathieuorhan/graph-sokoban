@@ -25,6 +25,11 @@ if opt.use_prioritised_replay:
 else:
     trainer = QLearningGraphCenteredTrainer(opt)
 
+# Load pretrained models if any
+if opt.pretrained:
+    trainer.policy_net.load_state_dict(torch.load(opt.weights_path))
+    trainer.target_net.load_state_dict(torch.load(opt.weights_path))
+
 # Training loop
 for epoch in range(opt.epochs):
     # Train

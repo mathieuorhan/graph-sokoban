@@ -15,6 +15,7 @@ def parse_options():
     # Data paths
     parser.add_argument("--train_path", type=str, default="levels/dummy_small_100")
     parser.add_argument("--test_path", type=str, default="levels/dummy_small_100")
+    parser.add_argument("--weights_path", type=str, default="")
 
     parser.add_argument("--target_update", type=int, default=100)
     parser.add_argument("--gamma", type=float, default=1.0)
@@ -32,8 +33,7 @@ def parse_options():
     parser.add_argument("--static_prob", type=float, default=0)
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--cpu", default=False, action="store_true")
-
-    parser.add_argument("--hiddens", type=int, default=32)
+    parser.add_argument("--pretrained", default=False, action="store_true")
 
     # Opt
     parser.add_argument("--hiddens", type=int, default=64)
