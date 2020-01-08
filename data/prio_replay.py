@@ -1,31 +1,29 @@
 import numpy as np
 import torch
-from utilities.data_structures.Deque import Deque
-from utilities.data_structures.Max_Heap import Max_Heap
+from data.data_structures.deque import Deque
+from data.data_structures.max_heap import MaxHeap
+from data.constants import Transition
 
 # Adapted from :
 # https://github.com/p-christ/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/blob/master/utilities/data_structures/Prioritised_Replay_Buffer.py
+# https://github.com/p-christ/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/blob/a1f98841e6162d9b71c83827f9ec9dba835d6c7e/agents/DQN_agents/DDQN_With_Prioritised_Experience_Replay.py
 
 
-class Prioritised_Replay_Buffer(Max_Heap, Deque):
+class PrioritisedReplayBuffer(MaxHeap, Deque):
     """Data structure that maintains a deque, a heap and an array. The deque keeps track of which experiences are the oldest and so
-     tells us which ones to delete once the buffer starts getting full. The heap lets us quickly retrieve the experience
-     with the max td_value. And the array lets us do quick random samples with probabilities equal to the proportional td errors.
-     We also keep track of the sum of the td values using a simple variable.
-    NOTE that this implementation is not optimal in terms of speed. At some point I will make improvements to it.
-     """
+    tells us which ones to delete once the buffer starts getting full. The heap lets us quickly retrieve the experience
+    with the max td_value. And the array lets us do quick random samples with probabilities equal to the proportional td errors.
+    We also keep track of the sum of the td values using a simple variable.
+    """
 
-    def __init__(self, hyperparameters, seed=0):
-        Max_Heap.__init__(
+    def __init__(self, opt, device):
+        MaxHeap.__init__(
             self,
-            hyperparameters["buffer_size"],
-            dimension_of_value_attribute=5,
+            opt["buffer_size"],
+            dimension_of_value_attribute=4,
             default_key_to_use=0,
         )
-        Deque.__init__(
-            self, hyperparameters["buffer_size"], dimension_of_value_attribute=5
-        )
-        np.random.seed(seed)
+        Deque.__init__(self, opt["buffer_size"], dimension_of_value_attribute=5)
 
         self.deques_td_errors = self.initialise_td_errors_array()
 
@@ -33,10 +31,10 @@ class Prioritised_Replay_Buffer(Max_Heap, Deque):
         self.number_experiences_in_deque = 0
         self.adapted_overall_sum_of_td_errors = 0
 
-        self.alpha = hyperparameters["alpha_prioritised_replay"]
-        self.beta = hyperparameters["beta_prioritised_replay"]
-        self.incremental_td_error = hyperparameters["incremental_td_error"]
-        self.batch_size = hyperparameters["batch_size"]
+        self.alpha = opt["alpha_prioritised_replay"]
+        self.beta = opt["beta_prioritised_replay"]
+        self.incremental_td_error = opt["incremental_td_error"]
+        self.batch_size = opt["batch_size"]
 
         self.heap_indexes_to_update_td_error_for = None
 
@@ -45,23 +43,22 @@ class Prioritised_Replay_Buffer(Max_Heap, Deque):
             "action": 1,
             "reward": 2,
             "next_state": 3,
-            "done": 4,
         }
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = device
 
     def initialise_td_errors_array(self):
         """Initialises a deque of Nodes of length self.max_size"""
         return np.zeros(self.max_size)
 
-    def add_experience(self, raw_td_error, state, action, reward, next_state, done):
+    def add_experience(self, raw_td_error, state, action, reward, next_state):
         """Save an experience in the replay buffer"""
         td_error = (abs(raw_td_error) + self.incremental_td_error) ** self.alpha
         self.update_overall_sum(
             td_error, self.deque[self.deque_index_to_overwrite_next].key
         )
         self.update_deque_and_deque_td_errors(
-            td_error, state, action, reward, next_state, done
+            td_error, state, action, reward, next_state
         )
         self.update_heap_and_heap_index_to_overwrite()
         self.update_number_experiences_in_deque()
@@ -72,11 +69,11 @@ class Prioritised_Replay_Buffer(Max_Heap, Deque):
         self.adapted_overall_sum_of_td_errors += new_td_error - old_td_error
 
     def update_deque_and_deque_td_errors(
-        self, td_error, state, action, reward, next_state, done
+        self, td_error, state, action, reward, next_state
     ):
         """Updates the deque by overwriting the oldest experience with the experience provided"""
         self.deques_td_errors[self.deque_index_to_overwrite_next] = td_error
-        self.add_element_to_deque(td_error, (state, action, reward, next_state, done))
+        self.add_element_to_deque(td_error, (state, action, reward, next_state))
 
     def add_element_to_deque(self, new_key, new_value):
         """Adds an element to the deque"""
@@ -108,7 +105,7 @@ class Prioritised_Replay_Buffer(Max_Heap, Deque):
 
     def swap_heap_elements(self, index1, index2):
         """Swaps two position of two heap elements and then updates the heap_index stored in the two nodes. We have to override
-        this method from Max_Heap so that it also updates the heap_index variables"""
+        this method from MaxHeap so that it also updates the heap_index variables"""
         self.heap[index1], self.heap[index2] = self.heap[index2], self.heap[index1]
         self.heap[index1].heap_index = index1
         self.heap[index2].heap_index = index2
@@ -121,15 +118,13 @@ class Prioritised_Replay_Buffer(Max_Heap, Deque):
             experiences,
             deque_sample_indexes,
         ) = self.pick_experiences_based_on_proportional_td_error()
-        states, actions, rewards, next_states, dones = self.separate_out_data_types(
-            experiences
-        )
+        transitions = self.separate_out_data_types(experiences)
         self.deque_sample_indexes_to_update_td_error_for = deque_sample_indexes
         importance_sampling_weights = self.calculate_importance_sampling_weights(
             experiences
         )
         return (
-            (states, actions, rewards, next_states, dones),
+            transitions,
             importance_sampling_weights,
         )
 
@@ -147,68 +142,22 @@ class Prioritised_Replay_Buffer(Max_Heap, Deque):
 
     def separate_out_data_types(self, experiences):
         """Separates out experiences into their different parts and makes them tensors ready to be used in a pytorch model"""
-        states = (
-            torch.from_numpy(
-                np.vstack(
-                    [
-                        e.value[self.indexes_in_node_value_tuple["state"]]
-                        for e in experiences
-                    ]
-                )
-            )
-            .float()
-            .to(self.device)
+        transitions = Transition(
+            state=[
+                e.value[self.indexes_in_node_value_tuple["state"]] for e in experiences
+            ],
+            action=[
+                e.value[self.indexes_in_node_value_tuple["action"]] for e in experiences
+            ],
+            reward=[
+                e.value[self.indexes_in_node_value_tuple["reward"]] for e in experiences
+            ],
+            next_state=[
+                e.value[self.indexes_in_node_value_tuple["next_state"]]
+                for e in experiences
+            ],
         )
-        actions = (
-            torch.from_numpy(
-                np.vstack(
-                    [
-                        e.value[self.indexes_in_node_value_tuple["action"]]
-                        for e in experiences
-                    ]
-                )
-            )
-            .float()
-            .to(self.device)
-        )
-        rewards = (
-            torch.from_numpy(
-                np.vstack(
-                    [
-                        e.value[self.indexes_in_node_value_tuple["reward"]]
-                        for e in experiences
-                    ]
-                )
-            )
-            .float()
-            .to(self.device)
-        )
-        next_states = (
-            torch.from_numpy(
-                np.vstack(
-                    [
-                        e.value[self.indexes_in_node_value_tuple["next_state"]]
-                        for e in experiences
-                    ]
-                )
-            )
-            .float()
-            .to(self.device)
-        )
-        dones = (
-            torch.from_numpy(
-                np.vstack(
-                    [
-                        int(e.value[self.indexes_in_node_value_tuple["done"]])
-                        for e in experiences
-                    ]
-                )
-            )
-            .float()
-            .to(self.device)
-        )
-
-        return states, actions, rewards, next_states, dones
+        return transitions
 
     def calculate_importance_sampling_weights(self, experiences):
         """Calculates the importance sampling weight of each observation in the sample. The weight is proportional to the td_error of the observation,

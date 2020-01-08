@@ -33,6 +33,8 @@ def parse_options():
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--cpu", default=False, action="store_true")
 
+    parser.add_argument("--hiddens", type=int, default=32)
+
     # Opt
     parser.add_argument("--lr", type=float, default=0.0005)
     parser.add_argument("--rms_alpha", type=float, default=0.95)
@@ -52,6 +54,14 @@ def parse_options():
     parser.add_argument("--no_penalize_deadlocks", default=True, action="store_true")
     parser.add_argument("--go_back_after_deadlocks", default=False, action="store_true")
     parser.add_argument("--reward_deadlocks", default=-1, type=float)
+
+    # Prio replay
+    # alpha_prioritised_replay
+    # beta_prioritised_replay
+    # incremental_td_error
+    parser.add_argument("--alpha_prioritised_replay", default=0.6, type=float)
+    parser.add_argument("--beta_prioritised_replay", default=0.1, type=float)
+    parser.add_argument("--incremental_td_error", default=1e-8, type=float)
 
     args = EasyDict(parser.parse_args().__dict__)
     return args

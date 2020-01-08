@@ -99,6 +99,7 @@ class QLearningTrainer(AbstractTrainer):
         epoch_info["epsilon"] = self.scheduler.epsilon
         epoch_info["time elapsed"] = time.time()
         epoch_info["mean_loss"] = 0.0
+        epoch_info["td_error"] = 0.0
 
         # Sample the episodes
         ep_indexes = list(range(len(self.dataset_train)))
@@ -112,9 +113,14 @@ class QLearningTrainer(AbstractTrainer):
             epoch_info["mean_cum_reward"] += ep_info["cum_reward"] / len(
                 self.dataset_train
             )
-            epoch_info["deadlocks"] += ep_info["deadlocks"]
+            epoch_info["deadlocks"] += (
+                ep_info["deadlocks"] if "deadlocks" in ep_info else 0
+            )
             epoch_info["solved"] += ep_info["solved"]
             epoch_info["mean_loss"] += ep_info["loss"]
+            epoch_info["td_error"] += (
+                ep_info["td_error"] if "td_error" in ep_info else 0
+            )
             # Update the target network, copying all weights and biases in DQN
             if self.update_count % self.opt.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
