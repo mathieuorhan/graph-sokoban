@@ -62,6 +62,7 @@ def parse_options():
     parser.add_argument("--alpha_prioritised_replay", default=0.6, type=float)
     parser.add_argument("--beta_prioritised_replay", default=0.1, type=float)
     parser.add_argument("--incremental_td_error", default=1e-8, type=float)
+    parser.add_argument("--use_prioritised_replay", default=False, action="store_true")
 
     args = EasyDict(parser.parse_args().__dict__)
     return args

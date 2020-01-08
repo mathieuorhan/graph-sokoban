@@ -6,7 +6,10 @@ import os
 import options
 import logger
 from model.graph_centered import GraphCenteredNet
-from rl.qlearning_trainer_gc import QLearningGraphCenteredTrainer
+from rl.qlearning_trainer_gc import (
+    QLearningGraphCenteredTrainer,
+    QLearningPrioritizedBufferGraphCenteredTrainer,
+)
 from data.embedding import DirectionalPositionalEmbedding
 
 
@@ -17,7 +20,10 @@ opt.embedding = DirectionalPositionalEmbedding()
 logger.setup_logger(opt.logs, training_id=opt.training_id)
 history_train = dict()
 history_eval = dict()
-trainer = QLearningGraphCenteredTrainer(opt)
+if opt.use_prioritised_replay:
+    trainer = QLearningPrioritizedBufferGraphCenteredTrainer(opt)
+else:
+    trainer = QLearningGraphCenteredTrainer(opt)
 
 # Training loop
 for epoch in range(opt.epochs):
