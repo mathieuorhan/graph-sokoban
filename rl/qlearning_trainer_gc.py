@@ -11,7 +11,11 @@ from torch_geometric.data import Batch
 from data.constants import Transition
 from data.dataset import InMemorySokobanDataset
 import data.utils as utils
-from model.graph_centered import GraphCenteredNet, SimpleGraphCenteredNet
+from model.graph_centered import (
+    GraphCenteredNet,
+    SimpleGraphCenteredNet,
+    GraphCenteredNetV2,
+)
 from rl.abstract_trainer import AbstractTrainer
 from rl.explore import epsilon_greedy_gc
 from rl.schedulers import AnnealingScheduler
@@ -26,19 +30,21 @@ class QLearningGraphCenteredTrainer(QLearningTrainer):
         )
 
     def build_networks(self):
-        self.policy_net = GraphCenteredNet(
+        self.policy_net = GraphCenteredNetV2(
             self.embedding.NUM_NODES_FEATURES,
             None,
-            ratio=1.0,
-            hiddens=32,
+            num_message_passing=self.opt.num_message_passing,
+            # ratio=1.0,
+            hiddens=self.opt.hiddens,
             aggr="max",
             device=self.device,
         )
-        self.target_net = GraphCenteredNet(
+        self.target_net = GraphCenteredNetV2(
             self.embedding.NUM_NODES_FEATURES,
             None,
-            ratio=1.0,
-            hiddens=32,
+            num_message_passing=self.opt.num_message_passing,
+            # ratio=1.0,
+            hiddens=self.opt.hiddens,
             aggr="max",
             device=self.device,
         )
