@@ -33,8 +33,6 @@ def parse_options():
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--cpu", default=False, action="store_true")
 
-    parser.add_argument("--hiddens", type=int, default=32)
-
     # Opt
     parser.add_argument("--hiddens", type=int, default=64)
     parser.add_argument("--num_message_passing", type=int, default=2)
