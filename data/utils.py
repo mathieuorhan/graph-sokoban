@@ -134,6 +134,7 @@ def display_graph(state, q_values=None, node_size=3000):
         node_size=node_size,
         linewidths=1,
         font_color="w",
+        font_size=10,
         pos=pos_map,
     )
 
@@ -141,7 +142,7 @@ def display_graph(state, q_values=None, node_size=3000):
 def plot_history(history, history_eval=None, figsize=(10, 10)):
     plt.style.use("ggplot")
 
-    fig, axes = plt.subplots(4, 1, figsize=(10, 10))
+    fig, axes = plt.subplots(4, 1, figsize=figsize)
     # Mean cumulative reward
     axes[0].plot(history["mean_cum_reward"], lw=2, label="train")
     axes[0].set_ylabel("mean cum reward")
@@ -173,4 +174,4 @@ def plot_history(history, history_eval=None, figsize=(10, 10)):
 
     plt.xlabel("epochs")
 
-    plt.show()
+    # plt.show()
