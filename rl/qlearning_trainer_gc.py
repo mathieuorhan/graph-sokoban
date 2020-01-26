@@ -301,7 +301,7 @@ class QLearningPrioritizedBufferGraphCenteredTrainer(QLearningGraphCenteredTrain
         mean_td_error = td_errors.mean()
 
         self.update_count += 1
-        return loss, mean_td_error
+        return loss.item(), mean_td_error.item()
 
     def train_one_episode(self, episode_idx):
         ep_info = {}

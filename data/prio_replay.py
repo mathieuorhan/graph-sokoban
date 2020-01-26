@@ -23,7 +23,7 @@ class PrioritisedReplayBuffer(MaxHeap, Deque):
             dimension_of_value_attribute=4,
             default_key_to_use=0,
         )
-        Deque.__init__(self, opt["buffer_size"], dimension_of_value_attribute=5)
+        Deque.__init__(self, opt["buffer_size"], dimension_of_value_attribute=4)
 
         self.deques_td_errors = self.initialise_td_errors_array()
 

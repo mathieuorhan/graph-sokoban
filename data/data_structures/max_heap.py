@@ -25,7 +25,7 @@ class MaxHeap(object):
         )
 
         # We don't use the 0th element in a heap so we want it to have infinite value so it is never swapped with a lower node
-        heap[0] = Node(float("inf"), (None, None, None, None, None))
+        heap[0] = Node(float("inf"), (None, None, None, None))
         return heap
 
     def update_element_and_reorganise_heap(self, heap_index_for_change, new_element):
