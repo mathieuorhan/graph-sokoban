@@ -1,0 +1,12 @@
+easydict
+numpy
+matplotlib
+tqdm
+gym
+gym-sokoban
+heapq
+networkx
+torch
+torchvision
+termcolor
+logging
