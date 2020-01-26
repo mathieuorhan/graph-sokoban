@@ -10,7 +10,7 @@ from data.constants import SokobanElements as se
 from data.utils import ascii_to_img
 
 
-def generate_dummy(width, height, n_box, n_levels, savedir, save_as_image):
+def generate_dummy(width, height, n_box, n_levels, savedir):
     """Generates rectangular levels without interior walls.
     """
     os.makedirs(savedir, exist_ok=True)
@@ -58,12 +58,12 @@ def generate_dummy(width, height, n_box, n_levels, savedir, save_as_image):
         with open(txt_fname, "w") as f:
             for line in lines:
                 f.write("".join(line) + "\n")
-        if save_as_image:
-            img_fname = os.path.join(
-                savedir, "dummy_{}x{}_{}box_{}.png".format(width, height, n_box, lvl)
-            )
-            img = ascii_to_img(txt_fname)
-            plt.imsave(img_fname, img)
+
+        img_fname = os.path.join(
+            savedir, "dummy_{}x{}_{}box_{}.png".format(width, height, n_box, lvl)
+        )
+        img = ascii_to_img(txt_fname)
+        plt.imsave(img_fname, img)
 
 
 if __name__ == "__main__":
@@ -85,23 +85,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "-l", "--levels", type=int, default=10, help="number of levels to generate"
     )
-    parser.add_argument(
-        "-i",
-        "--images",
-        default=False,
-        action="store_true",
-        help="Also save images with txt files",
-    )
 
     args = parser.parse_args()
-    savedir, width, height, n_box, n_levels, save_as_image = (
+    savedir, width, height, n_box, n_levels = (
         args.dir,
         args.width,
         args.height,
         args.boxes,
         args.levels,
-        args.images,
     )
 
     # Generate levels
-    generate_dummy(width, height, n_box, n_levels, savedir, save_as_image)
+    generate_dummy(width, height, n_box, n_levels, savedir)
